@@ -1,4 +1,12 @@
 services:
+  config-server:
+    build:
+      context: ..
+      dockerfile: services/config-server/Dockerfile
+    container_name: config-server
+    ports:
+      - "8888:8888"
+
   discovery-server:
     build:
       context: ..
@@ -17,8 +25,10 @@ services:
     environment:
       # Inside the Compose network, Eureka is reached by its service name, never by localhost
       EUREKA_URL: http://discovery-server:8761/eureka/
+      CONFIG_SERVER_URL: http://config-server:8888
     depends_on:
       - discovery-server
+      - config-server
 
   api-gateway:
     build:

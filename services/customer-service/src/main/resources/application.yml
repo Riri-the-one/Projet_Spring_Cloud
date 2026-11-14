@@ -1,0 +1,16 @@
+
+spring:
+  application:
+    name: customer-service
+
+  config:
+    import: "configserver:http://localhost:8888"
+
+  cloud:
+    config:
+      label: main
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
