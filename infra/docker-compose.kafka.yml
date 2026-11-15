@@ -1,0 +1,43 @@
+# Optional broker only. No Kafka dependency or bootstrap setting is added to Java services.
+services:
+  kafka:
+    image: apache/kafka:4.4.0
+    profiles: [kafka]
+    command: ["bash", "/opt/ticketflow-kafka/start.sh"]
+    ports:
+      - "127.0.0.1:${TICKETFLOW_KAFKA_PORT:-29092}:29092"
+    environment:
+      # Public development cluster identifier, not a credential. Keep it with its volume.
+      CLUSTER_ID: ${TICKETFLOW_KAFKA_CLUSTER_ID:-4L6g3nShT-eMCtK--X86sw}
+      TICKETFLOW_KAFKA_PORT: ${TICKETFLOW_KAFKA_PORT:-29092}
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    volumes:
+      - ticketflow-kafka-data:/var/lib/kafka/data
+      - ./kafka:/opt/ticketflow-kafka:ro
+    # Unused image-declared volumes are ephemeral, not anonymous persistent volumes.
+    tmpfs:
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+    healthcheck:
+      test: ["CMD", "bash", "/opt/ticketflow-kafka/healthcheck.sh"]
+      interval: 20s
+      timeout: 12s
+      retries: 18
+      start_period: 40s
+    stop_grace_period: 40s
+
+  kafka-client:
+    image: apache/kafka:4.4.0
+    profiles: [kafka-tools]
+    entrypoint: ["bash", "/opt/ticketflow-kafka/probe.sh"]
+    environment:
+      KAFKA_HEAP_OPTS: -Xms32m -Xmx128m
+    volumes:
+      - ./kafka:/opt/ticketflow-kafka:ro
+    tmpfs:
+      - /var/lib/kafka/data
+      - /etc/kafka/secrets
+      - /mnt/shared/config
+
+volumes:
+  ticketflow-kafka-data:

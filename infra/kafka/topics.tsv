@@ -1,0 +1,4 @@
+# topic partitions retention.ms -- Development settings, not producer implementations.
+ticketflow.booking.events.v1 3 604800000
+ticketflow.payment.events.v1 3 604800000
+ticketflow.ticket.events.v1 3 604800000
