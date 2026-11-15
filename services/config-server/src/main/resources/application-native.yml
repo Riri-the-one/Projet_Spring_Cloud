@@ -1,0 +1,7 @@
+# Development only. Default profile still uses the Git backend.
+spring:
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: ${CONFIG_REPO_LOCATION:file:./infra/config-demo/}

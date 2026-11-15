@@ -4,8 +4,8 @@
 
 ## Concept illustrated
 A second REST service, built exactly like `customer-service`, that **registers itself
-in Eureka** from day one. The point of this step: the service becomes reachable through
-the gateway **without any change in the gateway** (discovery locator).
+in Eureka** from day one. The main Gateway configuration exposes it through an explicit
+`/api/events/**` route targeting `lb://event-service`, without changing the business path.
 
 It also shows a small **life cycle** (state machine) enforced by the domain object:
 `DRAFT -> PUBLISHED -> CLOSED`.
@@ -54,7 +54,8 @@ overridable with the `EUREKA_URL` environment variable (default `http://localhos
 ## Central configuration
 The service imports shared configuration from the Config Server
 (`spring.config.import=optional:configserver:...`, default `http://localhost:8888`, `CONFIG_SERVER_URL` in Compose).
-It gets `config-repo/application.yml`; add `config-repo/event-service.yml` for settings specific to it.
+The native Docker demonstration reads `infra/config-demo/application.yml` and `event-service.yml`.
+The TP3 Git backend reads the real external configuration repository instead.
 The service still starts without the Config Server (`optional:`).
 
 ## Run locally
@@ -71,12 +72,13 @@ Create, publish and list an event (replace the date by a future one):
     curl -i -X POST localhost:8082/api/events/1/publish
     curl localhost:8082/api/events
 
-## Through the gateway (no gateway change needed)
+## Through the gateway (explicit route)
 With discovery-server, event-service and api-gateway running, wait about 30 s and call:
 
-    curl localhost:8080/event-service/api/events
+    curl localhost:8080/api/events
 
-The gateway discovered `event-service` on its own and created the route `/event-service/**`.
+The explicit Gateway route resolves `event-service` through Eureka. Automatic publication of all
+registered services is disabled. See the [French guide](../../docs/ARIJ_GATEWAY_DOCKER.md).
 
 ## Run with Docker
     docker compose -f infra/docker-compose.yml up --build event-service

@@ -27,14 +27,19 @@ composants déjà présents des éléments planifiés et des choix restant à va
 
 ## Architecture
 
+Le guide pratique en français [Gateway et Docker d'Arij](docs/ARIJ_GATEWAY_DOCKER.md)
+décrit les six services, les routes explicites `/api/customers`, `/api/events`, `/api/bookings`,
+les modes Config Server native/Git et les commandes PowerShell de démonstration.
+Cette démonstration locale n'intègre pas encore JWT/Keycloak.
+
 | Module | Role | Key technology | Status |
 |---|---|---|---|
 | `customer-service` | Customer profiles (CRUD) | Spring Web, JPA | Done |
-| `api-gateway` | Single entry point, routing, rate limiting | Spring Cloud Gateway | Done |
+| `api-gateway` | Single entry point, explicit load-balanced routes | Spring Cloud Gateway WebFlux | Done (authentication planned) |
 | `discovery-server` | Service registry | Eureka | Done |
-| `event-service` | Events and seats catalog | Spring Web, JPA | Planned |
-| `config-server` | Centralized configuration | Spring Cloud Config | Planned |
-| `booking-service` | Booking and seat locking | OpenFeign, Resilience4J | Planned |
+| `event-service` | Events and seats catalog | Spring Web, JPA | Implemented |
+| `config-server` | Centralized configuration (Git / native demo) | Spring Cloud Config | Implemented |
+| `booking-service` | Booking and seat locking | OpenFeign, Resilience4J | Implemented |
 | `payment-service` | Simulated payment provider (random failures) | Resilience4J | Planned |
 | `notification-service` | Confirmation emails/SMS | Kafka consumer | Planned |
 | `web-frontend` | Event catalog and customer booking journey | Angular | Planned |
@@ -72,7 +77,7 @@ PostgreSQL · Docker / Docker Compose · Spring AI (later)
     ticketflow/
     ├── docs/            # lessons, ADRs, templates
     ├── infra/           # docker-compose and infrastructure config
-    ├── config-repo/     # configuration served by the config server
+    ├── infra/config-demo/ # native development configuration; Git repo is external
     └── services/        # one folder per microservice, each with its own README
 
 Every module is independently runnable and testable, and documents itself in
@@ -82,9 +87,20 @@ its own `README.md`.
 
 Prerequisites: JDK 21, Maven (or the included wrapper), Docker.
 
-    git clone https://github.com/<your-user>/ticketflow.git
-    cd ticketflow
-    mvn clean verify
+    git clone https://github.com/Riri-the-one/Projet_Spring_Cloud.git
+    cd Projet_Spring_Cloud
+    ./mvnw -B -ntp verify
+
+PowerShell : `.\mvnw.cmd -B -ntp verify`. Avec Docker Desktop (conteneurs Linux) :
+
+```powershell
+docker compose -f infra/docker-compose.yml config --quiet
+docker compose -f infra/docker-compose.yml up -d --build --wait --wait-timeout 300
+powershell -NoProfile -File tools/Test-ArijDemo.ps1
+```
+
+Compose utilise le mode native local, six services et H2 en mémoire. Le mode TP3/Git
+nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git.yml`.
 
 ## Who is this for?
 
