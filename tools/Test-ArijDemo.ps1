@@ -1,4 +1,4 @@
-param([string]$Gateway = 'http://localhost:8080')
+param([string]$Gateway = 'http://localhost:8080', [string]$Customer = 'http://localhost:8081')
 $ErrorActionPreference = 'Stop'
 # The default Gateway is now protected. Supply a real local ADMIN access token.
 $demoAccessToken = $env:TICKETFLOW_DEMO_ACCESS_TOKEN
@@ -11,9 +11,9 @@ $handler.AllowAutoRedirect = $false
 $client = New-Object System.Net.Http.HttpClient($handler)
 $client.Timeout = [TimeSpan]::FromSeconds(8)
 
-function Request([string]$Method, [string]$Url, [int]$Expected, $Body = $null) {
+function Request([string]$Method, [string]$Url, [int[]]$Expected, $Body = $null) {
     $request = New-Object System.Net.Http.HttpRequestMessage([System.Net.Http.HttpMethod]::new($Method), $Url)
-    if (([uri]$Url).Authority -eq ([uri]$Gateway).Authority) {
+    if (([uri]$Url).GetLeftPart([UriPartial]::Authority) -in @(([uri]$Gateway).GetLeftPart([UriPartial]::Authority), ([uri]$Customer).GetLeftPart([UriPartial]::Authority))) {
         $request.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $demoAccessToken)
     }
     if ($null -ne $Body) {
@@ -22,10 +22,10 @@ function Request([string]$Method, [string]$Url, [int]$Expected, $Body = $null) {
     $response = $client.SendAsync($request).GetAwaiter().GetResult()
     try {
         $content = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
-        if ([int]$response.StatusCode -ne $Expected) { throw "$Method $Url : $([int]$response.StatusCode), attendu $Expected. $content" }
+        if ($Expected -notcontains [int]$response.StatusCode) { throw "$Method $Url : $([int]$response.StatusCode), attendu $Expected. $content" }
         $served = if ($response.Headers.Contains('X-Served-By')) { $response.Headers.GetValues('X-Served-By') -join ',' } else { '' }
-        Write-Host "OK $Expected $Method $Url"
-        return [pscustomobject]@{ Content = $content; Location = [string]$response.Headers.Location; ServedBy = $served }
+        Write-Host "OK $([int]$response.StatusCode) $Method $Url"
+        return [pscustomobject]@{ StatusCode = [int]$response.StatusCode; Content = $content; Location = [string]$response.Headers.Location; ServedBy = $served }
     } finally { $response.Dispose(); $request.Dispose() }
 }
 
@@ -55,19 +55,23 @@ try {
     }
     $config = Request GET 'http://localhost:8888/customer-service/default/main' 200
     if (@(($config.Content | ConvertFrom-Json).propertySources).Count -eq 0) { throw 'Config Server ne fournit aucune configuration' }
-    $null = Request GET 'http://localhost:8081/api/config/message' 200
-    $null = Request POST 'http://localhost:8081/actuator/refresh' 200
-    $null = Request GET 'http://localhost:8081/api/config/message' 200
-    $null = Request GET 'http://localhost:8081/api/customers' 200
-    $customer = Request POST "$Gateway/api/customers" 201 @{
+    $null = Request GET "$Customer/api/config/message" 200
+    $null = Request POST "$Customer/actuator/refresh" 200
+    $null = Request GET "$Customer/api/config/message" 200
+    $null = Request GET "$Customer/api/customers" 200
+    $customerResult = Request POST "$Gateway/api/customers" @(201,409) @{
         firstName='Arij'; lastName='Demo'; email=([guid]::NewGuid().ToString()+'@example.com'); phone='+212600000000'
     }
-    if ($customer.ServedBy -ne 'api-gateway') { throw 'En-tete X-Served-By incorrect' }
-    $customerId = ($customer.Content | ConvertFrom-Json).id
-    $location = [uri]$customer.Location
+    if ($customerResult.StatusCode -eq 409) {
+        if (($customerResult.Content | ConvertFrom-Json).code -ne 'CUSTOMER_IDENTITY_CONFLICT') { throw 'Conflit Customer inattendu' }
+        $customerResult = Request GET "$Gateway/api/customers/me" 200
+    }
+    if ($customerResult.ServedBy -ne 'api-gateway') { throw 'En-tete X-Served-By incorrect' }
+    $customerId = ($customerResult.Content | ConvertFrom-Json).id
+    $location = if ($customerResult.StatusCode -eq 201) { [uri]$customerResult.Location } else { [uri]"$Gateway/api/customers/$customerId" }
     if ($location.Authority -ne ([uri]$Gateway).Authority -or $location.AbsolutePath -ne "/api/customers/$customerId") { throw "Location incorrecte: $location" }
     $null = Request GET $location.AbsoluteUri 200
-    $null = Request GET "http://localhost:8081/api/customers/$customerId" 200
+    $null = Request GET "$Customer/api/customers/$customerId" 200
     $null = Request GET "$Gateway/api/customers/9223372036854775807" 404
     $null = Request POST "$Gateway/api/customers" 400 @{firstName='Arij'; lastName='Demo'; email='invalide'}
 

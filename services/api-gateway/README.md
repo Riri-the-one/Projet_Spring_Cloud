@@ -19,7 +19,8 @@ La Gateway consulte le registre Eureka pour choisir une instance ; les requêtes
 Le Discovery Locator est désactivé par défaut. Config Server, Eureka, `/api/config/message`, les consoles H2
 et les endpoints Actuator des services ne disposent pas de route publique. Seule la santé propre à la Gateway est exposée.
 La [phase 1 Keycloak/JWT](../../docs/ARIJ_SECURITY_KEYCLOAK.md) protège ces routes par JWT et rôles.
-Les services métier ne contrôlent pas encore les jetons ni les propriétaires. Compose est limité à l'interface locale.
+La [phase 2A Customer](../../docs/ARIJ_CUSTOMER_IDENTITY.md) contrôle désormais les JWT et la propriété
+dans Customer. Ces contrôles restent à réaliser dans Event et Booking. Compose est limité à l'interface locale.
 
 ## Exécution
 

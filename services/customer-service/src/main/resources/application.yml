@@ -2,6 +2,12 @@
 spring:
   application:
     name: customer-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/ticketflow}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/ticketflow/protocol/openid-connect/certs}
 
   config:
     import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
@@ -14,3 +20,25 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: create-drop
+  h2:
+    console:
+      enabled: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
+ticketflow:
+  security:
+    audience: ${TICKETFLOW_JWT_AUDIENCE:ticketflow-api}
+
+management:
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+
+# SQL constraint errors can contain emails and subjects; HTTP errors are sanitized by the advice.
+logging:
+  level:
+    org.hibernate.orm.jdbc.error: "OFF"
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"

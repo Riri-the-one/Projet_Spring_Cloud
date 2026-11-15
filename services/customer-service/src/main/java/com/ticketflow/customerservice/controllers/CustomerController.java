@@ -40,6 +40,16 @@ public class CustomerController {
         return CustomerResponse.from(service.get(id));
     }
 
+    @GetMapping("/me")
+    CustomerResponse me() {
+        return CustomerResponse.from(service.me());
+    }
+
+    @PutMapping("/me")
+    CustomerResponse updateMe(@Valid @RequestBody CustomerRequest request) {
+        return CustomerResponse.from(service.updateMe(request));
+    }
+
     @GetMapping
     List<CustomerResponse> list() {
         return service.list().stream().map(CustomerResponse::from).toList();

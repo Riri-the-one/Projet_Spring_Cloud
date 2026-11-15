@@ -69,7 +69,12 @@ services:
     environment:
       <<: *client-env
       SERVER_PORT: "8081"
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/ticketflow
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
+      TICKETFLOW_JWT_AUDIENCE: ticketflow-api
     depends_on:
+      keycloak:
+        condition: service_healthy
       config-server:
         condition: service_healthy
       discovery-server:

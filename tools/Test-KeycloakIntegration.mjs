@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 const keycloak = process.env.KEYCLOAK_PUBLIC_URL ?? 'http://localhost:8180';
 const gateway = process.env.TICKETFLOW_GATEWAY_URL ?? 'http://localhost:8080';
-for (const address of [keycloak, gateway]) {
+const customerService = process.env.TICKETFLOW_CUSTOMER_URL ?? 'http://localhost:8081';
+for (const address of [keycloak, gateway, customerService]) {
   const url = new URL(address);
   assert.equal(url.protocol, 'http:', 'This script is exclusively for the local HTTP demonstration');
   assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'Only loopback targets are allowed');
@@ -85,14 +86,14 @@ async function authenticate(user) {
   return result.access_token;
 }
 
-async function check(method, path, expected, bearer, body, headers = {}) {
-  const response = await fetchTimed(`${gateway}${path}`, {
+async function check(method, path, expected, bearer, body, headers = {}, base = gateway) {
+  const response = await fetchTimed(`${base}${path}`, {
     method, headers: { ...headers, ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   assert.equal(response.status, expected, `${method} ${path}`);
-  console.log(`OK ${expected} ${method} ${path}`);
+  console.log(`OK ${expected} ${method} ${base}${path}`);
   return response;
 }
 
@@ -107,6 +108,7 @@ if (process.argv.includes('--auth-only')) {
 const customer = tokens.get('demo-customer');
 const organizer = tokens.get('demo-organizer');
 const admin = tokens.get('demo-admin');
+const direct = (method, path, status, bearer, body, headers) => check(method, path, status, bearer, body, headers, customerService);
 // Eureka's caches converge after health checks; wait only on backend availability.
 const readyDeadline = Date.now() + 180000;
 while (true) {
@@ -134,6 +136,39 @@ const preflight = await check('OPTIONS', '/api/bookings', 200, undefined, undefi
 });
 assert.equal(preflight.headers.get('access-control-allow-origin'), 'http://localhost:4200');
 
+// Phase 2A: Customer verifies the same real token even when Gateway is bypassed.
+await direct('GET', '/actuator/health', 200);
+await direct('GET', '/api/customers/me', 401);
+await direct('GET', '/internal/customers/me', 401);
+await direct('GET', '/api/customers/me', 403, organizer);
+await direct('GET', '/api/customers', 403, customer);
+await direct('GET', '/api/customers', 200, admin);
+await direct('POST', '/actuator/refresh', 403, customer);
+await direct('GET', '/api/config/message', 403, customer);
+const ownResponse = await fetchTimed(`${gateway}/api/customers/me`, { headers: { Authorization: `Bearer ${customer}` } });
+assert.ok([200, 404].includes(ownResponse.status));
+const customerBody = { firstName: 'Client', lastName: 'Fictif', email: `${randomBytes(12).toString('hex')}@example.invalid`, phone: '123' };
+const own = ownResponse.status === 404
+  ? await (await check('POST', '/api/customers', 201, customer, customerBody)).json()
+  : await ownResponse.json();
+await check('GET', '/api/customers/me', 200, customer);
+await direct('GET', `/api/customers/${own.id}`, 200, customer);
+await direct('GET', `/api/customers/${own.id}`, 403, organizer);
+await direct('PUT', `/api/customers/${own.id}`, 403, organizer, customerBody);
+await direct('GET', `/api/customers/${own.id}`, 200, admin);
+await check('PUT', '/api/customers/me', 200, customer, customerBody);
+const duplicate = await check('POST', '/api/customers', 409, customer,
+  { ...customerBody, email: `${randomBytes(12).toString('hex')}@example.invalid` });
+assert.equal((await duplicate.json()).code, 'CUSTOMER_IDENTITY_CONFLICT');
+const resolved = await direct('GET', `/internal/customers/me?customerId=999999`, 200, customer, undefined,
+  { 'X-Customer-Id': '999999', 'X-User-Id': 'another-user' });
+assert.deepEqual(await resolved.json(), { customerId: own.id });
+await direct('GET', '/internal/customers/me', 403, organizer);
+await check('GET', '/internal/customers/me', 403, admin);
+await direct('PUT', '/api/customers/me', 400, customer,
+  { ...customerBody, identityIssuer: 'https://attacker.invalid', identitySubject: 'another-user' });
+await direct('GET', '/api/customers', 401, undefined, undefined, { 'X-Roles': 'ADMIN', 'X-User-Id': 'demo-admin' });
+
 // Reject the password grant; the application and this test both use Code + PKCE.
 const passwordGrant = await fetchTimed(`${issuer}/protocol/openid-connect/token`, {
   method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -146,7 +181,7 @@ console.log('OK password grant désactivé');
 
 // Reuse the six-service demonstration with a real admin token, never written to disk.
 const demo = spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-  fileURLToPath(new URL('./Test-ArijDemo.ps1', import.meta.url)), '-Gateway', gateway], {
+  fileURLToPath(new URL('./Test-ArijDemo.ps1', import.meta.url)), '-Gateway', gateway, '-Customer', customerService], {
   env: { ...process.env, TICKETFLOW_DEMO_ACCESS_TOKEN: admin }, encoding: 'utf8', timeout: 240000,
 });
 process.stdout.write(demo.stdout ?? '');
@@ -154,4 +189,4 @@ if (demo.status !== 0) {
   process.stderr.write(demo.stderr ?? '');
   throw new Error('Six-service demonstration failed');
 }
-console.log('Intégration phase 1 validée. Propriété des ressources et validation JWT interne : phase 2.');
+console.log('Intégration phase 2A validée. Sécurité et propriété Event/Booking restent à réaliser.');

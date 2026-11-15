@@ -1,5 +1,9 @@
 # Coordination sécurité — phase 2
 
+> La [phase 2A Customer](ARIJ_CUSTOMER_IDENTITY.md) implémente désormais la liaison d'identité,
+> les contrôles de propriété Customer et la résolution interne. Le [contrat pour Salma](ARIJ_CUSTOMER_BOOKING_CONTRACT.md)
+> est disponible ; son intégration Booking et les travaux Event restent à réaliser.
+
 La phase 1 ajoute Keycloak et les contrôles JWT/rôles du Gateway. Elle ne contrôle pas la propriété
 des ressources et ne sécurise pas les appels directs aux services métier.
 
