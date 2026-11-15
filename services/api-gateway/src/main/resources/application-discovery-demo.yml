@@ -1,0 +1,15 @@
+# Optional TP2 demonstration: expose only the customer business API by service name.
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+              include-expression: "serviceId == 'customer-service' or serviceId == 'CUSTOMER-SERVICE'"
+              predicates:
+                - name: Path
+                  args:
+                    pattern: "'/'+serviceId+'/api/customers/**'"

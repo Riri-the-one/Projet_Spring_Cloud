@@ -1,17 +1,11 @@
 spring:
+  config:
+    import: classpath:gateway-routes.yml
   application:
     name: api-gateway
   cloud:
     config:
       enabled: false
-    gateway:
-      server:
-        webflux:
-          discovery:
-            locator:
-              enabled: true
-          default-filters:
-            - AddResponseHeader=X-Served-By, api-gateway
 
 eureka:
   client:
