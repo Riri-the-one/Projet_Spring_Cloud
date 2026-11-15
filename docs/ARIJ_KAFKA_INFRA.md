@@ -68,11 +68,17 @@ vérifie les paramètres existants sans les modifier :
 
 | Topic | Partitions | Réplication | Rétention |
 | --- | --- | --- | --- |
+| `ticketflow.event.events.v1` | 3 | 1 | 7 jours |
 | `ticketflow.booking.events.v1` | 3 | 1 | 7 jours |
 | `ticketflow.payment.events.v1` | 3 | 1 | 7 jours |
 | `ticketflow.ticket.events.v1` | 3 | 1 | 7 jours |
 
-La création automatique des topics est désactivée. Aucun message métier n'est envoyé.
+La création automatique des topics est désactivée. Après le démarrage du broker,
+exécuter explicitement `init-topics.sh` (commande ci-dessus) ; le script de test le
+fait également et vérifie chacun des quatre topics du manifeste. Aucun message métier n'est envoyé.
+Manar sera responsable des producteurs `EventPublished` et `EventClosed`, avec
+l'identifiant métier de l'événement comme clé Kafka. L'UUID `eventId` de l'enveloppe
+identifie le message, pas l'événement métier. Aucun producteur Event n'est implémenté ici.
 Le topic technique `ticketflow.infra.probe.v1` reçoit uniquement des marqueurs de test.
 Les tests contrôlent la création, les acquittements, la consommation exacte et ordonnée
 de deux messages avec clés, puis leur présence après redémarrage et remplacement du

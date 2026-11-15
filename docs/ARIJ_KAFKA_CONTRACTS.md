@@ -5,20 +5,27 @@ producteurs ; elle ne constitue pas une implémentation métier.
 
 | Responsable futur | Topic | Clé proposée | Types proposés |
 | --- | --- | --- | --- |
+| Manar / Event | `ticketflow.event.events.v1` | identifiant métier de l'événement en chaîne | `EventPublished`, `EventClosed` |
 | Salma / Booking | `ticketflow.booking.events.v1` | `bookingId` en chaîne | `booking.created`, `booking.cancelled` |
 | Salma / Payment simulé | `ticketflow.payment.events.v1` | `bookingId` en chaîne | `payment.succeeded`, `payment.failed` |
 | Arij / Ticket ultérieur | `ticketflow.ticket.events.v1` | `bookingId` en chaîne | `ticket.issued` |
 
 Docker : `bootstrap.servers=kafka:9092`. IntelliJ : `127.0.0.1:29092`.
-Les trois topics ont trois partitions, réplication 1 et rétention sept jours en local.
-Leur création relève de l'infrastructure. Event Service n'est pas modifié.
+Les quatre topics ont trois partitions, réplication 1 et rétention sept jours en local.
+Leur création relève de l'infrastructure : exécuter explicitement `init-topics.sh`
+après le démarrage du broker, comme indiqué dans le guide. Le démarrage du broker
+ne crée pas les topics métier. Les tests parcourent tout le manifeste, y compris Event.
+Manar reste responsable des futurs producteurs `EventPublished` et `EventClosed`.
+Aucun code Event Service n'est modifié.
 
 ## Enveloppe JSON UTF-8 proposée
 
 Voir [le schéma versionné](../infra/kafka/contracts/event-envelope-v1.schema.json).
 Champs obligatoires : `eventId` UUID, `eventType`, `schemaVersion=1`, `source`,
 `occurredAt` ISO-8601 UTC, `aggregateId` en chaîne, `correlationId` et `data` objet.
-`aggregateId` désigne la réservation, le paiement ou le ticket du producteur concerné.
+`aggregateId` désigne l'événement, la réservation, le paiement ou le ticket du producteur concerné.
+Pour Event, la clé Kafka est l'identifiant métier de l'événement ; `eventId` dans
+l'enveloppe est l'UUID unique du message, distinct de cet identifiant métier.
 La clé Kafka peut donc être le bookingId alors que l'aggregateId est un paymentId.
 `aggregateVersion` est recommandé pour détecter les événements obsolètes.
 Salma reste propriétaire des champs de `data` et des moments de publication.
