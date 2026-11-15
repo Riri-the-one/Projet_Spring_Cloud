@@ -108,6 +108,22 @@ if (process.argv.includes('--auth-only')) {
 const customer = tokens.get('demo-customer');
 const organizer = tokens.get('demo-organizer');
 const admin = tokens.get('demo-admin');
+if (process.argv.includes('--ticket-only')) {
+  const ticket = process.env.TICKETFLOW_TICKET_URL ?? 'http://localhost:8084';
+  const url = new URL(ticket);
+  assert.equal(url.protocol, 'http:');
+  assert.ok(['localhost', '127.0.0.1'].includes(url.hostname));
+  await check('GET', '/actuator/health', 200, undefined, undefined, {}, ticket);
+  await check('GET', '/api/tickets/me', 401, undefined, undefined, {}, ticket);
+  await check('GET', '/api/tickets/me', 403, organizer, undefined, {}, ticket);
+  const response = await check('GET', '/api/tickets/me', 200, customer, undefined,
+    { 'X-Customer-Id': '999999', 'X-Roles': 'ADMIN' }, ticket);
+  assert.deepEqual(await response.json(), []);
+  await check('POST', '/api/tickets', 403, admin, { bookingId: 1 }, {}, ticket);
+  await check('POST', '/internal/tickets/issue', 403, admin, {}, {}, ticket);
+  console.log('Ticket demo verified with real JWTs; no synthetic confirmation or ticket was created.');
+  process.exit(0);
+}
 if (process.argv.includes('--customer-postgresql')) {
   const { verifyCustomerPostgresql } = await import('./customer-postgresql-scenario.mjs');
   await verifyCustomerPostgresql({ customer, organizer, admin, customerService, fetchTimed });

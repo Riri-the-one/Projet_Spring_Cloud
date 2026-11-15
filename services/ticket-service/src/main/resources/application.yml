@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: ticket-service
+  config:
+    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+  cloud:
+    config:
+      label: main
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/ticketflow}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/ticketflow/protocol/openid-connect/certs}
+  jpa:
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+server:
+  port: 8084
+ticketflow:
+  customer-url: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
+  security:
+    audience: ${TICKETFLOW_JWT_AUDIENCE:ticketflow-api}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+logging:
+  level:
+    org.hibernate.orm.jdbc.error: "OFF"
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"
