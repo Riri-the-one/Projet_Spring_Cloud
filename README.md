@@ -109,6 +109,13 @@ Le test OIDC nécessite Node.js 22 ou plus et utilise Code + PKCE avec trois com
 Compose utilise le mode native local, six services, Keycloak 26.8.2 et H2. Le mode TP3/Git
 nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git.yml`.
 
+## Kafka local optionnel
+
+Le broker KRaft est activé explicitement par `infra/docker-compose.kafka.yml` et le
+profil `kafka`. Les services existants restent indépendants de Kafka.
+Voir le [guide PowerShell et les tests réels](docs/ARIJ_KAFKA_INFRA.md) et les
+[contrats proposés aux producteurs métier](docs/ARIJ_KAFKA_CONTRACTS.md).
+
 ## Who is this for?
 
 Java developers who know Spring Boot basics and want to move into

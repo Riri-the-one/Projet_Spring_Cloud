@@ -2,3 +2,7 @@
 *.cmd text eol=crlf
 infra/postgresql/**/*.sh text eol=lf
 infra/postgresql/**/*.sql text eol=lf
+infra/kafka/**/*.sh text eol=lf
+infra/kafka/*.sh text eol=lf
+infra/kafka/*.properties text eol=lf
+infra/kafka/*.tsv text eol=lf

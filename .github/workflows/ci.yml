@@ -28,3 +28,18 @@ jobs:
           ./tools/Initialize-PostgresqlDev.ps1
           ./tools/Test-PostgresqlInfra.ps1
           ./tools/Test-PostgresqlInfra.ps1 -Recreate
+
+  kafka-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Verify Kafka Docker and host clients, topics and persistent storage
+        shell: pwsh
+        run: |
+          ./tools/Test-KafkaInfra.ps1
+          ./tools/Test-KafkaInfra.ps1 -Recreate
