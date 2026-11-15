@@ -18,7 +18,8 @@ La Gateway consulte le registre Eureka pour choisir une instance ; les requêtes
 
 Le Discovery Locator est désactivé par défaut. Config Server, Eureka, `/api/config/message`, les consoles H2
 et les endpoints Actuator des services ne disposent pas de route publique. Seule la santé propre à la Gateway est exposée.
-Les routes de démonstration ne sont **pas sécurisées** : JWT/Keycloak reste à développer. Compose est limité à l'interface locale.
+La [phase 1 Keycloak/JWT](../../docs/ARIJ_SECURITY_KEYCLOAK.md) protège ces routes par JWT et rôles.
+Les services métier ne contrôlent pas encore les jetons ni les propriétaires. Compose est limité à l'interface locale.
 
 ## Exécution
 
@@ -33,12 +34,14 @@ curl.exe -i http://localhost:8080/api/customers
 `CONFIG_SERVER_URL` vaut `http://localhost:8888` par défaut, `EUREKA_URL` vaut
 `http://localhost:8761/eureka/`. L'import Config Server est obligatoire.
 Un `503` peut être normal pendant la convergence du registre (environ 30 à 90 secondes).
-Un `404` peut signifier une route absente ou une réponse métier propagée ; le corps et les journaux permettent de les distinguer.
+Sans JWT, les routes privées renvoient `401`. Un rôle insuffisant ou un chemin non autorisé avec JWT
+renvoie `403`. Les `404` métier sont toujours propagés après autorisation.
 
 ## Discovery Locator facultatif
 
 Le profil `discovery-demo` ajoute `/customer-service/api/customers/**` en conservant les routes explicites.
 Il accepte uniquement `customer-service` et uniquement son chemin métier ; il ne publie pas les autres services ni leurs endpoints internes.
+L'alias applique les mêmes contrôles JWT/rôles que la route explicite Customer.
 La réécriture automatique retire le préfixe `/customer-service` dans ce profil seulement.
 
 ```powershell
@@ -60,3 +63,4 @@ Les tests utilisent de vrais serveurs HTTP sur des ports aléatoires, le vrai Lo
 `SimpleDiscoveryClient` à la place d'Eureka. Ils couvrent les trois routes, POST/Location,
 les erreurs 400/404/409/503, l'absence d'instance, les routes internes et le profil facultatif.
 Ils ne démarrent ni Eureka ni les vrais services métier.
+Ils utilisent un JWKS local et de vrais JWT signés ; la sécurité reste active dans tous les tests.

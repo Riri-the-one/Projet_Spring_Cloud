@@ -20,7 +20,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 @ActiveProfiles("discovery-demo")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class GatewayDiscoveryDemoTest {
+class GatewayDiscoveryDemoTest extends GatewayJwtSupport {
     private static final HttpServer backend = startBackend();
 
     private static HttpServer startBackend() {
@@ -60,10 +60,22 @@ class GatewayDiscoveryDemoTest {
     void optionalLocatorRewritesOnlyTheCustomerBusinessPath() throws Exception {
         try (HttpClient client = HttpClient.newHttpClient()) {
             var response = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port
-                    + "/customer-service/api/customers/1")).GET().build(), HttpResponse.BodyHandlers.ofString());
+                    + "/customer-service/api/customers/1")).header("Authorization", "Bearer " + token("ADMIN"))
+                    .GET().build(), HttpResponse.BodyHandlers.ofString());
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).isEqualTo("/api/customers/1");
             assertThat(response.headers().firstValue("X-Served-By")).contains("api-gateway");
+        }
+    }
+
+    @Test
+    void discoveryAliasCannotBypassAuthenticationOrRoles() throws Exception {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port
+                    + "/customer-service/api/customers/1")).GET();
+            assertThat(client.send(builder.build(), HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(401);
+            builder.header("Authorization", "Bearer " + token("ORGANIZER"));
+            assertThat(client.send(builder.build(), HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(403);
         }
     }
 
@@ -74,8 +86,9 @@ class GatewayDiscoveryDemoTest {
                     "/discovery-server/eureka/apps", "/customer-service/actuator/health",
                     "/customer-service/api/config/message")) {
                 var response = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
+                        .header("Authorization", "Bearer " + token("ADMIN"))
                         .GET().build(), HttpResponse.BodyHandlers.ofString());
-                assertThat(response.statusCode()).as(path).isEqualTo(404);
+                assertThat(response.statusCode()).as(path).isEqualTo(403);
             }
         }
     }

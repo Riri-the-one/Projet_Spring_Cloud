@@ -1,5 +1,10 @@
 param([string]$Gateway = 'http://localhost:8080')
 $ErrorActionPreference = 'Stop'
+# The default Gateway is now protected. Supply a real local ADMIN access token.
+$demoAccessToken = $env:TICKETFLOW_DEMO_ACCESS_TOKEN
+if ([string]::IsNullOrWhiteSpace($demoAccessToken)) {
+    throw 'Gateway securisee : definir TICKETFLOW_DEMO_ACCESS_TOKEN (ADMIN), ou lancer node tools/Test-KeycloakIntegration.mjs.'
+}
 Add-Type -AssemblyName System.Net.Http
 $handler = New-Object System.Net.Http.HttpClientHandler
 $handler.AllowAutoRedirect = $false
@@ -8,6 +13,9 @@ $client.Timeout = [TimeSpan]::FromSeconds(8)
 
 function Request([string]$Method, [string]$Url, [int]$Expected, $Body = $null) {
     $request = New-Object System.Net.Http.HttpRequestMessage([System.Net.Http.HttpMethod]::new($Method), $Url)
+    if (([uri]$Url).Authority -eq ([uri]$Gateway).Authority) {
+        $request.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $demoAccessToken)
+    }
     if ($null -ne $Body) {
         $request.Content = New-Object System.Net.Http.StringContent(($Body | ConvertTo-Json -Compress), [Text.Encoding]::UTF8, 'application/json')
     }
@@ -75,7 +83,7 @@ try {
     $null = Request POST "$Gateway/api/bookings/$bookingId/cancel" 200
     foreach ($path in @('/config-server/customer-service/default','/discovery-server/eureka/apps','/eureka/apps',
             '/api/config/message','/actuator/gateway/routes','/customer-service/actuator/health')) {
-        $null = Request GET "$Gateway$path" 404
+        $null = Request GET "$Gateway$path" 403
     }
-    Write-Host 'Demonstration validee : Config Server, Eureka, Customer direct et Gateway, Event, Booking, routes internes non exposees.'
+    Write-Host 'Demonstration validee : Config Server, Eureka, Customer direct et Gateway JWT, Event, Booking, routes internes refusees (403).'
 } finally { $client.Dispose(); $handler.Dispose() }
