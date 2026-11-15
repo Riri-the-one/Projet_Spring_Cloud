@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.net.URI;
 import java.util.UUID;
+import com.ticketflow.customerservice.CustomerJwtSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class CustomerControllerTest {
+class CustomerControllerTest extends CustomerJwtSupport {
 
     @Autowired
     MockMvc mockMvc;
@@ -35,27 +36,30 @@ class CustomerControllerTest {
 
     @Test
     void createThenGetThenDelete() throws Exception {
+        String auth = "Bearer " + tokenFor(UUID.randomUUID().toString(), "ADMIN");
         String location = mockMvc.perform(post("/api/customers")
+                        .header("Authorization", auth)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(uniqueEmail())))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andReturn().getResponse().getHeader("Location");
 
-        mockMvc.perform(get(URI.create(location)))
+        mockMvc.perform(get(URI.create(location)).header("Authorization", auth))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("John"));
 
-        mockMvc.perform(delete(URI.create(location)))
+        mockMvc.perform(delete(URI.create(location)).header("Authorization", auth))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get(URI.create(location)))
+        mockMvc.perform(get(URI.create(location)).header("Authorization", auth))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void rejectsInvalidEmail() throws Exception {
         mockMvc.perform(post("/api/customers")
+                        .header("Authorization", "Bearer " + tokenFor(UUID.randomUUID().toString(), "CUSTOMER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body("not-an-email")))
                 .andExpect(status().isBadRequest());
@@ -65,11 +69,13 @@ class CustomerControllerTest {
     void rejectsDuplicateEmail() throws Exception {
         String email = uniqueEmail();
         mockMvc.perform(post("/api/customers")
+                        .header("Authorization", "Bearer " + tokenFor(UUID.randomUUID().toString(), "CUSTOMER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(email)))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/customers")
+                        .header("Authorization", "Bearer " + tokenFor(UUID.randomUUID().toString(), "CUSTOMER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(email)))
                 .andExpect(status().isConflict());

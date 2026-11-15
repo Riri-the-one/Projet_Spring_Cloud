@@ -12,6 +12,8 @@ import com.ticketflow.customerservice.entities.Customer;
 import com.ticketflow.customerservice.exceptions.CustomerNotFoundException;
 import com.ticketflow.customerservice.exceptions.DuplicateEmailException;
 import com.ticketflow.customerservice.repos.CustomerRepo;
+import com.ticketflow.customerservice.security.CustomerAccessPolicy;
+import org.junit.jupiter.api.BeforeEach;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,14 @@ class CustomerServiceTest {
     @Mock
     CustomerRepo repo;
 
+    @Mock
+    CustomerAccessPolicy access;
+
+    @BeforeEach
+    void authenticatedIdentity() {
+        when(access.current()).thenReturn(new CustomerAccessPolicy.Identity("https://issuer.test", "subject", false));
+    }
+
     @InjectMocks
     CustomerService service;
 
@@ -34,12 +44,12 @@ class CustomerServiceTest {
     @Test
     void createNormalizesEmailAndSaves() {
         when(repo.existsByEmail("john@example.com")).thenReturn(false);
-        when(repo.save(any(Customer.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repo.saveAndFlush(any(Customer.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Customer saved = service.create(request);
 
         assertThat(saved.getEmail()).isEqualTo("john@example.com");
-        verify(repo).save(any(Customer.class));
+        verify(repo).saveAndFlush(any(Customer.class));
     }
 
     @Test
@@ -48,7 +58,7 @@ class CustomerServiceTest {
 
         assertThatThrownBy(() -> service.create(request))
                 .isInstanceOf(DuplicateEmailException.class);
-        verify(repo, never()).save(any());
+        verify(repo, never()).saveAndFlush(any());
     }
 
     @Test
