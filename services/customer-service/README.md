@@ -4,22 +4,27 @@
 
 ## Concept illustrated
 A standalone Spring Boot REST service with its own database. It owns customer
-data (name, email, phone). Authentication will be delegated to Keycloak later;
-this service only manages the business profile.
+data (name, email, phone). Keycloak authenticates users; this service independently validates
+JWTs and binds profiles to the immutable `(iss, sub)` identity. See the
+[French phase 2A guide](../../docs/ARIJ_CUSTOMER_IDENTITY.md) and the
+[Booking integration contract](../../docs/ARIJ_CUSTOMER_BOOKING_CONTRACT.md).
 
 ## Overview
 - **Port:** 8081
 - **Database:** H2 in-memory (recreated on every start)
 - **Depends on:** Config Server (8888, mandatory import), Eureka (8761, registration)
+- **JWT:** RS256, Keycloak issuer, audience `ticketflow-api`; no anonymous business access.
 
 | Method | Path | Description |
 |---|---|---|
-| POST | `/api/customers` | Create a customer (201 + Location) |
-| GET | `/api/customers/{id}` | Get one customer |
-| GET | `/api/customers` | List customers |
-| PUT | `/api/customers/{id}` | Update a customer |
-| DELETE | `/api/customers/{id}` | Delete a customer |
-| GET | `/api/customers/whoami` | Which instance answered (service name + port), for the load-balancing demo |
+| POST | `/api/customers` | CUSTOMER/ADMIN creates own profile (201 + Location, duplicate 409) |
+| GET/PUT | `/api/customers/me` | CUSTOMER/ADMIN reads or updates own profile |
+| GET | `/api/customers/{id}` | Owner or ADMIN |
+| GET | `/api/customers` | ADMIN lists customers |
+| PUT | `/api/customers/{id}` | Owner or ADMIN, immutable identity |
+| DELETE | `/api/customers/{id}` | ADMIN only; coordinate persistent Booking references |
+| GET | `/internal/customers/me` | Resolve authenticated profile to customerId; not routed by Gateway |
+| GET | `/api/customers/whoami` | ADMIN diagnostic, identifies the service instance |
 
 ## Service discovery
 Since `step-03-discovery` the service registers itself in Eureka under the name
@@ -33,7 +38,8 @@ gateway uses in `lb://customer-service`. The public path is `/api/customers/**`,
 - If Eureka is not running, the service still starts and answers on 8081; it only
   logs registration errors.
 
-Errors follow RFC 9457 (`ProblemDetail`): 400 validation, 404 not found, 409 duplicate email.
+Business errors follow RFC 9457 (`ProblemDetail`): 400 validation, 404 not found, 409 email/identity conflict.
+Spring Security returns 401 for missing/invalid tokens and 403 for insufficient permissions.
 
 ## Package layout
     controllers/   REST endpoints
@@ -50,8 +56,12 @@ and look for `CUSTOMER-SERVICE` on http://localhost:8761 (up to ~30 s).
     ./mvnw -pl services/customer-service spring-boot:run
 
     curl -i -X POST localhost:8081/api/customers \
+      -H "Authorization: Bearer $TICKETFLOW_ACCESS_TOKEN" \
       -H 'Content-Type: application/json' \
       -d '{"firstName":"Sara","lastName":"Idrissi","email":"sara@example.com"}'
+
+This shell example requires a CUSTOMER or ADMIN access token obtained using OIDC Code + PKCE.
+For the complete PowerShell/local demonstration, run `node tools/Test-KeycloakIntegration.mjs`.
 
 ## Run with Docker
     docker compose -f infra/docker-compose.yml up --build customer-service

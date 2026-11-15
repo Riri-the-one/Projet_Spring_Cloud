@@ -1,5 +1,9 @@
 # TicketFlow — Keycloak, JWT et Gateway : phase 1
 
+> Ce document conserve le périmètre et les résultats de phase 1. La [phase 2A Customer](ARIJ_CUSTOMER_IDENTITY.md)
+> ajoute maintenant la validation JWT directe et la propriété des profils Customer. Les limites décrites
+> pour Event et Booking restent applicables. Les scripts de démonstration ont été adaptés à Customer sécurisé.
+
 Cette phase protège l'entrée Gateway. **TicketFlow n'est pas encore entièrement sécurisé** :
 Customer, Event et Booking ne valident pas encore les JWT et ne contrôlent pas la propriété.
 Leurs entités, DTO, repositories et méthodes métier sont inchangés.

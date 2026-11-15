@@ -31,11 +31,12 @@ Le guide pratique en français [Gateway et Docker d'Arij](docs/ARIJ_GATEWAY_DOCK
 décrit les six services, les routes explicites `/api/customers`, `/api/events`, `/api/bookings`,
 les modes Config Server native/Git et les commandes PowerShell de démonstration.
 La [phase 1 Keycloak/JWT](docs/ARIJ_SECURITY_KEYCLOAK.md) protège maintenant le Gateway.
-Les contrôles de propriété et la validation JWT dans les services métier restent à réaliser.
+La [phase 2A Customer](docs/ARIJ_CUSTOMER_IDENTITY.md) ajoute la validation JWT directe et la propriété
+des profils. Les contrôles métier Event/Booking restent à réaliser.
 
 | Module | Role | Key technology | Status |
 |---|---|---|---|
-| `customer-service` | Customer profiles (CRUD) | Spring Web, JPA | Done |
+| `customer-service` | Customer profiles, JWT identity and ownership | Spring MVC, JPA, Spring Security | Security phase 2A |
 | `api-gateway` | Explicit load-balanced routes, JWT and role checks | Spring Cloud Gateway WebFlux, Spring Security | Security phase 1 |
 | `discovery-server` | Service registry | Eureka | Done |
 | `event-service` | Events and seats catalog | Spring Web, JPA | Implemented |
