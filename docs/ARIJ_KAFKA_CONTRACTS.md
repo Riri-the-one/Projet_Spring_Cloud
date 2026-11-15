@@ -6,7 +6,7 @@ producteurs ; elle ne constitue pas une implémentation métier.
 | Responsable futur | Topic | Clé proposée | Types proposés |
 | --- | --- | --- | --- |
 | Manar / Event | `ticketflow.event.events.v1` | identifiant métier de l'événement en chaîne | `EventPublished`, `EventClosed` |
-| Salma / Booking | `ticketflow.booking.events.v1` | `bookingId` en chaîne | `booking.created`, `booking.cancelled` |
+| Salma / Booking | `ticketflow.booking.events.v1` | `bookingId` en chaîne | `booking.created`, `booking.cancelled`, `BookingConfirmed` proposé pour Ticket |
 | Salma / Payment simulé | `ticketflow.payment.events.v1` | `bookingId` en chaîne | `payment.succeeded`, `payment.failed` |
 | Arij / Ticket ultérieur | `ticketflow.ticket.events.v1` | `bookingId` en chaîne | `ticket.issued` |
 
@@ -19,6 +19,9 @@ Manar reste responsable des futurs producteurs `EventPublished` et `EventClosed`
 Aucun code Event Service n'est modifié.
 
 ## Enveloppe JSON UTF-8 proposée
+
+Le [contrat BookingConfirmed pour Ticket](ARIJ_TICKET_BOOKING_CONTRACT.md) est proposé
+pour validation de Salma ; aucun consommateur métier n'est connecté dans ce premier lot.
 
 Voir [le schéma versionné](../infra/kafka/contracts/event-envelope-v1.schema.json).
 Champs obligatoires : `eventId` UUID, `eventType`, `schemaVersion=1`, `source`,
