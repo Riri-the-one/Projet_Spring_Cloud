@@ -40,8 +40,9 @@ Errors (RFC 9457): 400 invalid quantity / customer / missing event, 404 unknown 
 409 sold out / event not open / event already started / already cancelled, 503 `event-service` did not answer.
 
 ## Calling event-service
-`EVENT_SERVICE_URL` overrides the Eureka name: `EVENT_SERVICE_URL=http://localhost:8082` runs booking with only
-`event-service` started (no Eureka needed). Leave it empty to use the name.
+With the native demonstration configuration loaded, `EVENT_SERVICE_URL` overrides the Eureka name.
+Without Config Server, pass the application argument `--ticketflow.clients.event-service.url=http://localhost:8082`
+instead (or configure that property in IntelliJ). Leave the property empty to use Eureka.
 Retries, circuit breaker and fallbacks are the subject of the resilience step: today a failure is just a clean 503.
 
 ## Run
@@ -52,14 +53,16 @@ curl -X POST localhost:8082/api/events -H 'Content-Type: application/json' \
 curl -X POST localhost:8082/api/events/1/publish
 
 # 2. booking-service, pointing to event-service directly (no Eureka)
-EVENT_SERVICE_URL=http://localhost:8082 ./mvnw -pl services/booking-service spring-boot:run
+./mvnw -pl services/booking-service spring-boot:run '-Dspring-boot.run.arguments=--ticketflow.clients.event-service.url=http://localhost:8082'
 
 # 3. book
 curl -X POST localhost:8083/api/bookings -H 'Content-Type: application/json' \
   -d '{"eventId":1,"customerId":42,"quantity":2}'
 ```
 With Docker Compose (Eureka + Config Server), leave `EVENT_SERVICE_URL` empty: the name `event-service` is resolved
-by Eureka. Through the gateway (discovery locator): `http://localhost:8080/booking-service/api/bookings`.
+by Eureka. Through the explicit Gateway route: `http://localhost:8080/api/bookings`.
+The local native configuration maps `EVENT_SERVICE_URL` to the optional Feign URL override.
+See the [French guide](../../docs/ARIJ_GATEWAY_DOCKER.md) for both Config Server modes and Compose.
 
 ## Manual test scenario
 Try the service with real HTTP requests, without Eureka or the Config Server (the "connection refused" warnings
@@ -67,8 +70,8 @@ about ports 8761 and 8888 can be ignored).
 
 **1. Start the two services** (IntelliJ or `./mvnw -pl services/<name> spring-boot:run`)
 - `event-service` on port 8082, no setting needed.
-- `booking-service` on port 8083 with the environment variable `EVENT_SERVICE_URL=http://localhost:8082`.
-  Without it, the service looks for `event-service` in Eureka.
+- `booking-service` on port 8083 with the application argument `--ticketflow.clients.event-service.url=http://localhost:8082`.
+  Without it, the service looks for `event-service` in Eureka. `EVENT_SERVICE_URL` is mapped by the native central configuration only.
 
 **2. Create and publish an event with 3 seats** (use the id returned by the creation if it is not 1)
 ```bash
@@ -115,14 +118,15 @@ curl -i -X POST localhost:8083/api/bookings -H 'Content-Type: application/json' 
   -d '{"eventId":1,"customerId":42,"quantity":1}'
 ```
 Expected: **503** "The event service is temporarily unavailable, please retry". The connection is refused, so the
-answer is almost immediate; a service that is up but too slow is cut off after the 3 s read timeout
+answer is almost immediate; a service that is up but too slow is cut off after the read timeout (3 s with the native central configuration;
+without it, configure `spring.cloud.openfeign.client.config.default.read-timeout` explicitly)
 (`EventClientContractTest` checks this). Restart `event-service` and booking works again. The H2 database of
 `event-service` is in memory: its events must be created again.
 
 **6. Through Eureka and the gateway (optional)**
 
 Start `discovery-server` (8761) and `api-gateway` (8080), remove `EVENT_SERVICE_URL`, wait about 30 s for the
-registration, then call `localhost:8080/booking-service/api/bookings`. This proves that the name `event-service` is
+registration, then call `localhost:8080/api/bookings`. This proves that the name `event-service` is
 resolved by Eureka, which the automated tests do not cover.
 
 ## Tests
