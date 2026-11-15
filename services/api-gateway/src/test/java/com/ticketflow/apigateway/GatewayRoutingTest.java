@@ -30,7 +30,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "eureka.client.enabled=false")
-class GatewayRoutingTest {
+class GatewayRoutingTest extends GatewayJwtSupport {
 
     private static final AtomicReference<String> lastBackendPath = new AtomicReference<>();
     private static final AtomicReference<String> lastBackendBody = new AtomicReference<>();
@@ -92,6 +92,7 @@ class GatewayRoutingTest {
 
     private HttpResponse<String> get(String path) throws Exception {
         HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
+                .header("Authorization", "Bearer " + token("ADMIN"))
                 .GET()
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -115,12 +116,12 @@ class GatewayRoutingTest {
 
     @Test
     void serviceNameRoutesAreNotExposedByDefault() throws Exception {
-        assertThat(get("/customer-service/api/customers").statusCode()).isEqualTo(404);
+        assertThat(get("/customer-service/api/customers").statusCode()).isEqualTo(403);
     }
 
     @Test
     void unknownPathsAreNotRouted() throws Exception {
-        assertThat(get("/api/unknown").statusCode()).isEqualTo(404);
+        assertThat(get("/api/unknown").statusCode()).isEqualTo(403);
     }
 
     @Test
@@ -135,6 +136,7 @@ class GatewayRoutingTest {
     void preservesCreationStatusLocationAndRequestBody() throws Exception {
         String body = "{\"firstName\":\"Sara\",\"lastName\":\"Idrissi\",\"email\":\"sara@example.com\"}";
         HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/customers"))
+                .header("Authorization", "Bearer " + token("ADMIN"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -174,7 +176,7 @@ class GatewayRoutingTest {
         for (String path : java.util.List.of("/config-server/customer-service/default", "/discovery-server/eureka/apps",
                 "/eureka/apps", "/api/config/message", "/actuator/gateway/routes", "/actuator/env",
                 "/customer-service/actuator/health", "/event-service/actuator/health")) {
-            assertThat(get(path).statusCode()).as(path).isEqualTo(404);
+            assertThat(get(path).statusCode()).as(path).isEqualTo(403);
         }
     }
 }

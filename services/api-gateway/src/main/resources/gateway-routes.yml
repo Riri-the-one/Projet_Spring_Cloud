@@ -7,6 +7,9 @@ spring:
             locator:
               enabled: false
           default-filters:
+            - RemoveRequestHeader=X-Roles
+            - RemoveRequestHeader=X-User-Id
+            - RemoveRequestHeader=X-Customer-Id
             - PreserveHostHeader
             - AddResponseHeader=X-Served-By, api-gateway
           routes:
