@@ -34,6 +34,10 @@ La [phase 1 Keycloak/JWT](docs/ARIJ_SECURITY_KEYCLOAK.md) protège maintenant le
 La [phase 2A Customer](docs/ARIJ_CUSTOMER_IDENTITY.md) ajoute la validation JWT directe et la propriété
 des profils. Les contrôles métier Event/Booking restent à réaliser.
 
+L'[infrastructure PostgreSQL optionnelle](docs/ARIJ_POSTGRESQL_INFRA.md) prépare trois bases isolées
+avec un volume persistant. Elle s'active via un overlay/profil explicite ; les services restent en H2
+jusqu'aux migrations de leurs propriétaires. [Coordination Manar/Salma](docs/ARIJ_POSTGRESQL_COORDINATION.md).
+
 | Module | Role | Key technology | Status |
 |---|---|---|---|
 | `customer-service` | Customer profiles, JWT identity and ownership | Spring MVC, JPA, Spring Security | Security phase 2A |

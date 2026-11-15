@@ -7,9 +7,11 @@
 La phase 1 ajoute Keycloak et les contrôles JWT/rôles du Gateway. Elle ne contrôle pas la propriété
 des ressources et ne sécurise pas les appels directs aux services métier.
 
-Répartition officielle : Arij — architecture, Gateway, Docker, sécurité, Customer et Ticket ;
-Manar — Event, PostgreSQL et frontend catalogue ; Salma — Booking, paiement, Kafka et notifications ;
-Zainab — IA, MCP et Telegram.
+Répartition officielle actualisée : Arij — Customer sécurisé, Ticket, infrastructure PostgreSQL/Kafka,
+Notification et coordination technique ; Manar — Event, données/migrations Event, catalogue et
+authentification Angular ; Salma — Booking, Payment simulé, événements Kafka métier et interfaces
+client ; Zainab — MCP public, assistant IA et Telegram public au périmètre réduit.
+L'[infrastructure PostgreSQL](ARIJ_POSTGRESQL_INFRA.md) est préparée séparément des migrations métier.
 
 ## Manar / Event
 
