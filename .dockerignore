@@ -1,3 +1,15 @@
 **/target
 .git
 .idea
+.env
+**/.env
+**/.env.*
+**/*.log
+**/*.iml
+.codex
+.agents
+.aws
+.audit
+.bootstrap
+.npm-cache
+**/node_modules

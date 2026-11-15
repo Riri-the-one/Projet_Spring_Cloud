@@ -1,0 +1,22 @@
+# Development configuration served by Config Server, never a production database.
+eureka:
+  client:
+    # Keep registration stable while refreshing business @RefreshScope beans (TP3).
+    refresh:
+      enable: false
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

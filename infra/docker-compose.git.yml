@@ -1,0 +1,6 @@
+# TP3 mode: fail during Compose validation if the real configuration repository is missing.
+services:
+  config-server:
+    environment:
+      SPRING_PROFILES_ACTIVE: git
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI:?Set CONFIG_GIT_URI to the real TP3 configuration repository URL}

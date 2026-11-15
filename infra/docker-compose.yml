@@ -1,44 +1,114 @@
+# Local university demonstration only: no authentication yet; host ports bind to loopback.
+name: ticketflow-arij
+
+x-health: &health
+  test: ["CMD-SHELL", "curl --fail --silent --max-time 4 http://localhost:$${SERVER_PORT}/actuator/health > /dev/null"]
+  interval: 10s
+  timeout: 5s
+  retries: 18
+  start_period: 60s
+
+x-client-env: &client-env
+  CONFIG_SERVER_URL: http://config-server:8888
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+  EUREKA_CLIENT_REFRESH_ENABLE: "false"
+  JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+
 services:
   config-server:
     build:
       context: ..
       dockerfile: services/config-server/Dockerfile
-    container_name: config-server
     ports:
-      - "8888:8888"
+      - "127.0.0.1:8888:8888"
+    environment:
+      SERVER_PORT: "8888"
+      SPRING_PROFILES_ACTIVE: native
+      CONFIG_REPO_LOCATION: file:/config-repo/
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+    volumes:
+      - ./config-demo:/config-repo:ro
+    healthcheck: *health
 
   discovery-server:
     build:
       context: ..
       dockerfile: services/discovery-server/Dockerfile
-    container_name: discovery-server
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
+    environment:
+      SERVER_PORT: "8761"
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+    healthcheck: *health
 
   customer-service:
     build:
       context: ..
       dockerfile: services/customer-service/Dockerfile
-    container_name: customer-service
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
-      # Inside the Compose network, Eureka is reached by its service name, never by localhost
-      EUREKA_URL: http://discovery-server:8761/eureka/
-      CONFIG_SERVER_URL: http://config-server:8888
+      <<: *client-env
+      SERVER_PORT: "8081"
     depends_on:
-      - discovery-server
-      - config-server
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    healthcheck: *health
+
+  event-service:
+    build:
+      context: ..
+      dockerfile: services/event-service/Dockerfile
+    environment:
+      <<: *client-env
+      SERVER_PORT: "8082"
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    healthcheck: *health
+
+  booking-service:
+    build:
+      context: ..
+      dockerfile: services/booking-service/Dockerfile
+    environment:
+      <<: *client-env
+      SERVER_PORT: "8083"
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+    healthcheck: *health
 
   api-gateway:
     build:
       context: ..
       dockerfile: services/api-gateway/Dockerfile
-    container_name: api-gateway
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
-      # No more static URL: the gateway finds customer-service through Eureka (lb://)
-      EUREKA_URL: http://discovery-server:8761/eureka/
+      <<: *client-env
+      SERVER_PORT: "8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_DISCOVERY_LOCATOR_ENABLED: "false"
     depends_on:
-      - discovery-server
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      customer-service:
+        condition: service_healthy
+      event-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+    healthcheck: *health
