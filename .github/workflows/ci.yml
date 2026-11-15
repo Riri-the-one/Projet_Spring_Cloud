@@ -17,3 +17,14 @@ jobs:
           cache: maven
       - name: Build and test
         run: ./mvnw -B -ntp verify
+
+  postgresql-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PostgreSQL credentials, isolation and persistence
+        shell: pwsh
+        run: |
+          ./tools/Initialize-PostgresqlDev.ps1
+          ./tools/Test-PostgresqlInfra.ps1
+          ./tools/Test-PostgresqlInfra.ps1 -Recreate

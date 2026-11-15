@@ -16,3 +16,6 @@ out/
 .env
 .env.*
 !.env.example
+
+# Local PostgreSQL credentials (generated, never versioned).
+infra/postgresql/.local/
