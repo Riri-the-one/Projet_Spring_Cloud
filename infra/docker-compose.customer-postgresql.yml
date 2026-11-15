@@ -1,0 +1,21 @@
+# Use together with docker-compose.yml AND docker-compose.postgresql.yml --profile postgresql.
+# Only Customer changes datasource. Event and Booking retain their H2 configuration.
+services:
+  customer-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: postgresql
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888,configtree:/run/secrets/customer/
+      CUSTOMER_DATABASE_URL: jdbc:postgresql://postgres:5432/ticketflow_customer
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticketflow_customer
+      SPRING_DATASOURCE_USERNAME: ticketflow_customer
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "false"
+      SPRING_FLYWAY_CLEAN_DISABLED: "true"
+    secrets:
+      - source: postgres_customer_password
+        target: /run/secrets/customer/spring.datasource.password
+    depends_on:
+      postgres:
+        condition: service_healthy

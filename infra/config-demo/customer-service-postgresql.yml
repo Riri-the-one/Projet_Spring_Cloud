@@ -1,0 +1,14 @@
+# Profile-specific remote settings prevent the native demo's H2 defaults from winning.
+# Credentials are supplied only by the Customer secret; never by Config Server.
+spring:
+  datasource:
+    url: ${CUSTOMER_DATABASE_URL:jdbc:postgresql://127.0.0.1:5433/ticketflow_customer}
+    username: ticketflow_customer
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    clean-disabled: true

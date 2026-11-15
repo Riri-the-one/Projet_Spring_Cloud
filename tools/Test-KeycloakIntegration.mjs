@@ -108,6 +108,11 @@ if (process.argv.includes('--auth-only')) {
 const customer = tokens.get('demo-customer');
 const organizer = tokens.get('demo-organizer');
 const admin = tokens.get('demo-admin');
+if (process.argv.includes('--customer-postgresql')) {
+  const { verifyCustomerPostgresql } = await import('./customer-postgresql-scenario.mjs');
+  await verifyCustomerPostgresql({ customer, organizer, admin, customerService, fetchTimed });
+  process.exit(0);
+}
 const direct = (method, path, status, bearer, body, headers) => check(method, path, status, bearer, body, headers, customerService);
 // Eureka's caches converge after health checks; wait only on backend availability.
 const readyDeadline = Date.now() + 180000;

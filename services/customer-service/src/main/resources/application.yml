@@ -1,5 +1,7 @@
 
 spring:
+  flyway:
+    enabled: false # H2 demo: Hibernate owns its ephemeral schema. PostgreSQL opts in explicitly.
   application:
     name: customer-service
   security:
