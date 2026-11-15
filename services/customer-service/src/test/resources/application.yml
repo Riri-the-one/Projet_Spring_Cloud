@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: customer-service
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: jdbc:h2:mem:customer-service-test
+    username: sa
+    password: ""
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+
+server:
+  port: 0
+
+eureka:
+  client:
+    enabled: false
+
+ticketflow:
+  message: "Customer service test configuration"
