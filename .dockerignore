@@ -13,3 +13,4 @@
 .bootstrap
 .npm-cache
 **/node_modules
+infra/postgresql/.local

@@ -1,0 +1,44 @@
+# Explicit infrastructure overlay. Does not change any service datasource or migrate data.
+services:
+  postgres:
+    image: postgres:18.7-bookworm
+    profiles: [postgresql]
+    ports:
+      - "127.0.0.1:${TICKETFLOW_POSTGRES_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: ticketflow_admin
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets:
+      - postgres_admin_password
+      - postgres_customer_password
+      - postgres_event_password
+      - postgres_booking_password
+    volumes:
+      # PostgreSQL 18+ stores its major-specific PGDATA below this directory.
+      - ticketflow-postgresql-data:/var/lib/postgresql
+      - ./postgresql/init:/docker-entrypoint-initdb.d:ro
+      - ./postgresql/tools:/opt/ticketflow-postgresql:ro
+    healthcheck:
+      test: ["CMD", "bash", "/opt/ticketflow-postgresql/healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    stop_grace_period: 30s
+
+volumes:
+  ticketflow-postgresql-data:
+
+# Compose bind-mounts these local files; this is not a production secrets manager.
+secrets:
+  postgres_admin_password:
+    file: ${TICKETFLOW_POSTGRES_SECRETS_DIR:-./postgresql/.local}/admin.password
+  postgres_customer_password:
+    file: ${TICKETFLOW_POSTGRES_SECRETS_DIR:-./postgresql/.local}/customer.password
+  postgres_event_password:
+    file: ${TICKETFLOW_POSTGRES_SECRETS_DIR:-./postgresql/.local}/event.password
+  postgres_booking_password:
+    file: ${TICKETFLOW_POSTGRES_SECRETS_DIR:-./postgresql/.local}/booking.password

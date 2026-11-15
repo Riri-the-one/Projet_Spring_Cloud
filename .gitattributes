@@ -1,2 +1,4 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+infra/postgresql/**/*.sh text eol=lf
+infra/postgresql/**/*.sql text eol=lf
