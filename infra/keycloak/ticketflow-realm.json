@@ -1,0 +1,97 @@
+{
+  "realm": "ticketflow",
+  "enabled": true,
+  "displayName": "TicketFlow — démonstration locale uniquement",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "loginWithEmailAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "defaultSignatureAlgorithm": "RS256",
+  "roles": {
+    "realm": [
+      { "name": "CUSTOMER", "description": "Client TicketFlow" },
+      { "name": "ORGANIZER", "description": "Organisateur TicketFlow, sans rôle CUSTOMER implicite" },
+      { "name": "ADMIN", "description": "Administration applicative, pas administration Keycloak" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ticketflow-web",
+      "name": "TicketFlow Web (local)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "redirectUris": ["http://localhost:4200/", "http://localhost:4200/security-demo"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "defaultClientScopes": ["basic", "profile", "email"],
+      "protocolMappers": [
+        {
+          "name": "ticketflow-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "ticketflow-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "ticketflow-realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "scopeMappings": [
+    { "client": "ticketflow-web", "roles": ["CUSTOMER", "ORGANIZER", "ADMIN"] }
+  ],
+  "users": [
+    {
+      "username": "demo-customer",
+      "enabled": true,
+      "firstName": "Client",
+      "lastName": "Fictif",
+      "email": "customer@example.invalid",
+      "emailVerified": true,
+      "realmRoles": ["CUSTOMER"],
+      "credentials": [{ "type": "password", "value": "Customer-demo-only-2026!", "temporary": false }]
+    },
+    {
+      "username": "demo-organizer",
+      "enabled": true,
+      "firstName": "Organisateur",
+      "lastName": "Fictif",
+      "email": "organizer@example.invalid",
+      "emailVerified": true,
+      "realmRoles": ["ORGANIZER"],
+      "credentials": [{ "type": "password", "value": "Organizer-demo-only-2026!", "temporary": false }]
+    },
+    {
+      "username": "demo-admin",
+      "enabled": true,
+      "firstName": "Administrateur",
+      "lastName": "Fictif",
+      "email": "admin@example.invalid",
+      "emailVerified": true,
+      "realmRoles": ["ADMIN"],
+      "credentials": [{ "type": "password", "value": "Admin-demo-only-2026!", "temporary": false }]
+    }
+  ]
+}
