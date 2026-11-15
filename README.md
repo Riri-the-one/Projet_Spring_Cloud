@@ -30,12 +30,13 @@ composants déjà présents des éléments planifiés et des choix restant à va
 Le guide pratique en français [Gateway et Docker d'Arij](docs/ARIJ_GATEWAY_DOCKER.md)
 décrit les six services, les routes explicites `/api/customers`, `/api/events`, `/api/bookings`,
 les modes Config Server native/Git et les commandes PowerShell de démonstration.
-Cette démonstration locale n'intègre pas encore JWT/Keycloak.
+La [phase 1 Keycloak/JWT](docs/ARIJ_SECURITY_KEYCLOAK.md) protège maintenant le Gateway.
+Les contrôles de propriété et la validation JWT dans les services métier restent à réaliser.
 
 | Module | Role | Key technology | Status |
 |---|---|---|---|
 | `customer-service` | Customer profiles (CRUD) | Spring Web, JPA | Done |
-| `api-gateway` | Single entry point, explicit load-balanced routes | Spring Cloud Gateway WebFlux | Done (authentication planned) |
+| `api-gateway` | Explicit load-balanced routes, JWT and role checks | Spring Cloud Gateway WebFlux, Spring Security | Security phase 1 |
 | `discovery-server` | Service registry | Eureka | Done |
 | `event-service` | Events and seats catalog | Spring Web, JPA | Implemented |
 | `config-server` | Centralized configuration (Git / native demo) | Spring Cloud Config | Implemented |
@@ -96,10 +97,11 @@ PowerShell : `.\mvnw.cmd -B -ntp verify`. Avec Docker Desktop (conteneurs Linux)
 ```powershell
 docker compose -f infra/docker-compose.yml config --quiet
 docker compose -f infra/docker-compose.yml up -d --build --wait --wait-timeout 300
-powershell -NoProfile -File tools/Test-ArijDemo.ps1
+node tools/Test-KeycloakIntegration.mjs
 ```
 
-Compose utilise le mode native local, six services et H2 en mémoire. Le mode TP3/Git
+Le test OIDC nécessite Node.js 22 ou plus et utilise Code + PKCE avec trois comptes fictifs.
+Compose utilise le mode native local, six services, Keycloak 26.8.2 et H2. Le mode TP3/Git
 nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git.yml`.
 
 ## Who is this for?

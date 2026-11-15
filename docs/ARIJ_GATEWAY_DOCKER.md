@@ -1,5 +1,13 @@
 # TicketFlow — guide Gateway et Docker d'Arij
 
+> Ce guide conserve la démonstration de la PR Gateway/Docker. Depuis la phase 1 sécurité,
+> le Gateway exige un JWT pour les routes privées. Suivre le [guide Keycloak](ARIJ_SECURITY_KEYCLOAK.md)
+> et lancer `node tools/Test-KeycloakIntegration.mjs`, qui obtient de vrais jetons puis exécute
+> `Test-ArijDemo.ps1`. Les appels privés anonymes ci-dessous renvoient désormais 401 ; les chemins
+> internes avec un jeton valide sont refusés en 403 au lieu des anciens 404.
+> Il n'existe aucun profil désactivant la sécurité. Les résultats 64 tests/six conteneurs ci-dessous
+> décrivent la validation historique de la PR #2 ; les résultats de la phase 1 figurent dans le nouveau guide.
+
 ## Périmètre et audit
 
 Intervention sur Gateway, tests HTTP, construction Docker des six modules, réseau Compose et configuration de démonstration.
