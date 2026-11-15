@@ -109,6 +109,12 @@ Le test OIDC nécessite Node.js 22 ou plus et utilise Code + PKCE avec trois com
 Compose utilise le mode native local, six services, Keycloak 26.8.2 et H2. Le mode TP3/Git
 nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git.yml`.
 
+## Customer PostgreSQL optionnel
+
+Customer peut utiliser la base PostgreSQL existante via un overlay explicite, avec
+Flyway et validation du schéma. Le mode H2 reste disponible. Voir le
+[guide Customer PostgreSQL](docs/ARIJ_CUSTOMER_POSTGRESQL.md).
+
 ## Kafka local optionnel
 
 Le broker KRaft est activé explicitement par `infra/docker-compose.kafka.yml` et le
