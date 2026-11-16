@@ -31,7 +31,7 @@ Les PR #1 à #8 étaient déjà fusionnées. Cette clôture intègre #9, #10, #1
 | [#12](https://github.com/Riri-the-one/Projet_Spring_Cloud/pull/12) | Contrôles d'intégration et qualité |
 | [#13](https://github.com/Riri-the-one/Projet_Spring_Cloud/pull/13) — livraison finale | Routes de lecture Notification, reprise Kafka, résilience Gateway, démonstration reproductible et guide central ; statut effectif sur GitHub |
 
-Une fusion du document d'audit TP3 ne signifie pas que le dépôt Git externe a été trouvé. La procédure reste prête mais sa preuve externe est bloquée.
+La validation TP3 complémentaire a retrouvé et lu le dépôt public Vi0ma/ticketflow-config sur main ; les preuves Git et refresh isolées sont détaillées ci-dessous et dans l'audit TP3.
 
 ## Démarrage Windows et présentation
 
@@ -68,7 +68,7 @@ Lors du premier passage des anciens identifiants Docker Eureka aux identifiants 
 4. Montrer les quatre topics et un essai Kafka technique persistant.
 5. Présenter Ticket : tests de plusieurs places, concurrence/rejeu et propriété ; lecture runtime sans fabrication d'une confirmation.
 6. Présenter Notification : tests Kafka isolés, déduplication, panne du canal, DEAD/reprise et persistance ; canal simulé annoncé clairement.
-7. Terminer par les contrats encore attendus et le blocage TP3. Ne pas annoncer un achat payé de bout en bout.
+7. Présenter la validation Git TP3 et son refresh isolé, puis les contrats métier encore attendus. Ne pas annoncer un achat payé de bout en bout.
 
 ## Services, ports et stockage
 
@@ -153,14 +153,20 @@ Un redémarrage PostgreSQL de test avait chevauché un démarrage Notification :
 
 ## TP3 Config Server Git
 
-**BLOQUÉ — URL/DROITS DU DÉPÔT TP3 MANQUANTS.** Le Config Server réellement lancé est native ; /customer-service/default/main renvoie deux sources et version=null. CONFIG_GIT_URI est absent des environnements inspectés. Aucun dépôt externe officiel identifiable n'a été trouvé parmi les dépôts accessibles ; un dépôt privé peut exister sans accès.
+**Étape 03 entièrement validée dans le périmètre TP3 isolé le 16 novembre 2026.** Le dépôt public [Vi0ma/ticketflow-config](https://github.com/Vi0ma/ticketflow-config) est lu avec succès sur `main`, SHA `8a191f33b30aad5ae7a885b994b4fff24fc9afd5`. Le Config Server de contrôle sur loopback:18888 a servi ce même SHA pour `/customer-service/default/main`, `/api-gateway/default/main` et `/customer-service/dev/main`, avec les sources et propriétés attendues, dont la priorité du profil dev.
+
+Le refresh dynamique a réellement été démontré : historique v1 `da70d329e25ae1816c324fdfe82c085937bbed8a` vers v2 `1e91958792b8941687a73bf00ada35f12aab951d`, rejoué dans un Git local jetable. Le client Spring Config utilisant le contrôleur de production `@RefreshScope` affiche v1, reste en v1 après le changement Git, puis affiche v2 après POST `/actuator/refresh`, dans la même JVM. Le script vérifie aussi les SHA et la clé modifiée `ticketflow.message`.
 
 ```powershell
-powershell -NoProfile -File tools/Test-Tp3ConfigGit.ps1
-# Sans URL réelle : code 2 attendu, aucun faux dépôt ni fausse preuve.
+# Contre le serveur Git isolé déjà démarré sur 18888 :
+powershell -NoProfile -File tools/Test-Tp3ConfigGit.ps1 -RepositoryUri https://github.com/Vi0ma/ticketflow-config.git -ConfigServer http://127.0.0.1:18888
+# Historique réel cloné en lecture dans target/tp3-audit/external :
+powershell -NoProfile -File tools/Test-Tp3Refresh.ps1
 ```
 
-Voir [audit TP3](ARIJ_TP3_GIT_AUDIT.md). La procédure exige une vraie URL/branche, compare le SHA servi et distant, contrôle les propriétés sensibles et prépare un refresh Customer authentifié ADMIN. L'audit des propriétés servies ne remplace pas un audit exhaustif de l'historique du dépôt externe. Le TP de Zainab n'a pas été refait.
+Tests concernés : Maven Customer **58** + Config Server **1**, zéro échec ; trois endpoints Git et scénario refresh réussis. Voir [audit TP3](ARIJ_TP3_GIT_AUDIT.md) pour les commandes de préparation, les sources, preuves et limites.
+
+Le Config Server partagé reste configuré en **native**. Les fichiers TP3 ne sont appliqués ni à la Gateway actuelle (ils ne définissent que Customer), ni aux applications PostgreSQL/JWT. Aucun dépôt externe, volume ou donnée métier modifié. Docker est arrêté lors de cette session : l'état runtime partagé et le refresh ADMIN/JWT de la pile complète ne sont pas revérifiés. Le client de test est distinct, sans base ni sécurité HTTP, limité au loopback et arrêté après le test. Aucun blocage ne subsiste pour les exigences TP3 isolées ; ceci ne constitue pas une migration de la pile principale en Git.
 
 ## Checklist courte du groupe
 
@@ -168,7 +174,7 @@ Voir [audit TP3](ARIJ_TP3_GIT_AUDIT.md). La procédure exige une vraie URL/branc
 
 **Salma** : conserver son compte/base Booking ; fournir migrations et producteurs fiables ; résoudre Customer via le bearer utilisateur ; faire valider BookingConfirmed, échec, annulation et remboursement ; ne pas recréer Kafka/PostgreSQL/Keycloak. Ticket/Notification ne modifient jamais le stock.
 
-**Zainab/propriétaire TP3** : fournir l'URL officielle, droits et label ; démontrer un changement non sensible et le refresh. IA/MCP/Telegram restent hors de cette livraison.
+**Zainab/propriétaire TP3** : dépôt officiel retrouvé et lu, refresh historique démontré en isolation ; conserver la configuration native/PostgreSQL/JWT de la pile principale. IA/MCP/Telegram restent hors de cette livraison.
 
 ## Limites et clôture
 
