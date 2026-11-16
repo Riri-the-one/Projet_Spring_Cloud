@@ -109,6 +109,13 @@ Le test OIDC nécessite Node.js 22 ou plus et utilise Code + PKCE avec trois com
 Compose utilise le mode native local, six services, Keycloak 26.8.2 et H2. Le mode TP3/Git
 nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git.yml`.
 
+## Ticket Service — premier lot
+
+Le [module Ticket](services/ticket-service/README.md) fournit le cœur d'émission
+idempotente et une consultation JWT protégée. Son stockage est provisoirement H2,
+avec profil explicite ; aucune émission réseau n'est activée. Le
+[contrat BookingConfirmed proposé](docs/ARIJ_TICKET_BOOKING_CONTRACT.md) attend Salma.
+
 ## Customer PostgreSQL optionnel
 
 Customer peut utiliser la base PostgreSQL existante via un overlay explicite, avec
