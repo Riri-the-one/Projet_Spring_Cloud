@@ -112,8 +112,9 @@ nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git
 ## Ticket Service — premier lot
 
 Le [module Ticket](services/ticket-service/README.md) fournit le cœur d'émission
-idempotente et une consultation JWT protégée. Son stockage est provisoirement H2,
-avec profil explicite ; aucune émission réseau n'est activée. Le
+idempotente et une consultation JWT protégée via Gateway. Son
+[stockage PostgreSQL dédié](docs/ARIJ_TICKET_PERSISTENCE_GATEWAY.md) est activable
+explicitement ; H2 reste disponible et aucune émission réseau n'est activée. Le
 [contrat BookingConfirmed proposé](docs/ARIJ_TICKET_BOOKING_CONTRACT.md) attend Salma.
 
 ## Customer PostgreSQL optionnel
