@@ -25,3 +25,13 @@ spring:
               uri: lb://booking-service
               predicates:
                 - Path=/api/bookings/**
+            - id: ticket-reads
+              uri: lb://ticket-service
+              predicates:
+                - Path=/api/tickets/me,/api/tickets/{id},/api/tickets/bookings/{bookingId}
+                - Method=GET
+            - id: ticket-validity
+              uri: lb://ticket-service
+              predicates:
+                - Path=/api/tickets/{id}/validity
+                - Method=POST
