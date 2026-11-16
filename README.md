@@ -146,7 +146,7 @@ added soon.
 
 Le [guide Notification](docs/ARIJ_NOTIFICATION_SERVICE.md) décrit PostgreSQL isolé,
 inbox Kafka technique, déduplication, canal simulé et reprises durables. Aucun
-consommateur Booking/Payment n'est branché sans contrat validé ; Ticket #9 reste en Draft.
+consommateur Booking/Payment n'est branché sans contrat validé.
 
 ## License
 

@@ -1,7 +1,6 @@
 # Notification Service autonome — guide Arij
 
-Branche indépendante issue de main b0fc1f5 ; aucune dépendance à la fusion de #9.
-La PR #9 Ticket PostgreSQL/Gateway est auditée, verte sur cinq jobs et conservée en Draft.
+Notification est intégré avec les overlays Ticket PostgreSQL de la PR #9 fusionnée.
 Les sources métier Customer, Ticket, Event, Booking et Payment ne sont pas modifiées.
 
 ## Ce qui fonctionne
@@ -65,7 +64,7 @@ node tools/Test-NotificationHttp.mjs
 
 Le provisionnement peut recréer uniquement PostgreSQL pour monter le nouveau fichier,
 en conservant son volume : prévoir une courte interruption de connexion. Si le secret
-Ticket existe déjà, un petit overlay de compatibilité conserve son montage serveur,
+Ticket existe déjà, ses overlays PostgreSQL intégrés conservent son montage serveur,
 sans reprendre ses migrations/routes. Aucun secret ni volume existant n'est supprimé.
 Rôle/base partiels, privilèges inattendus ou secret perdu : refus, inspection manuelle,
 aucune rotation automatique. Vérification CONNECT dans les deux sens pour les domaines

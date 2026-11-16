@@ -3,7 +3,8 @@
 **Propositions uniquement : aucun contrat Booking/Payment accepté ni consommateur
 métier activé.** Audit du 16 novembre 2026 : main à b0fc1f5 et branche distante
 feature/salma-booking à 4c08ab8 ; aucun producteur Kafka ou contrat définitif détecté.
-La PR Ticket #9 reste indépendante et en Draft pour revue personnelle.
+La PR Ticket #9 est désormais fusionnée ; ses capacités de persistance ne remplacent
+pas la validation externe du contrat métier.
 
 Réutiliser les topics existants, avec bookingId comme clé et les conventions
 `eventId` UUID, `eventType`, `schemaVersion`, `source`, `occurredAt`, `aggregateId`,

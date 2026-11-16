@@ -4,7 +4,7 @@ $root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 & "$PSScriptRoot/Initialize-NotificationPostgresqlDev.ps1"
 $compose=@('compose','-f',"$root/infra/docker-compose.yml",'-f',"$root/infra/docker-compose.postgresql.yml",'-f',"$root/infra/docker-compose.notification.yml")
 if(Test-Path -LiteralPath "$root/infra/postgresql/.local/ticket.password") {
-    $compose+=@('-f',"$root/infra/docker-compose.notification-ticket-secret.yml")
+    $compose+=@('-f',"$root/infra/docker-compose.ticket.yml",'-f',"$root/infra/docker-compose.ticket-postgresql.yml")
 }
 $compose+=@('--profile','postgresql','--profile','notification')
 & docker @compose config --quiet

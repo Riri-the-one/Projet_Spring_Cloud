@@ -10,7 +10,7 @@ class NotificationSafetyTest {
         .withProperty("spring.datasource.password","test-only-placeholder").withProperty("spring.jpa.hibernate.ddl-auto","validate")
         .withProperty("spring.flyway.enabled","true").withProperty("spring.flyway.locations","classpath:db/migration/notification");e.setActiveProfiles("postgresql");return e;}
     @Test void safeStorageAndDisabledBusinessIngressAreAccepted(){assertThatCode(()->NotificationConfiguration.validate(safe())).doesNotThrowAnyException();}
-    @ParameterizedTest @CsvSource({"ticketflow.notification.ingress,business","spring.datasource.url,jdbc:postgresql://localhost/ticketflow_customer",
+    @ParameterizedTest @CsvSource({"ticketflow.notification.ingress,business","ticketflow.notification.ingress,probe","spring.datasource.url,jdbc:postgresql://localhost/ticketflow_customer",
         "spring.datasource.username,ticketflow_admin","spring.jpa.hibernate.ddl-auto,create-drop","spring.jpa.properties.hibernate.hbm2ddl.auto,update",
         "spring.flyway.baseline-on-migrate,true","spring.flyway.clean-disabled,false","spring.flyway.locations,classpath:db/migration/customer",
         "spring.datasource.password,''","spring.flyway.enabled,false"})

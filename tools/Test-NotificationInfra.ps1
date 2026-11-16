@@ -20,7 +20,7 @@ try{
     & $wrapper -B -ntp -f "$root/services/notification-service/pom.xml" -Pnotification-it verify
     if($LASTEXITCODE-ne 0){throw 'Notification PostgreSQL/Kafka integration failed'}
     $p=@('compose','-f',"$root/infra/docker-compose.yml",'-f',"$root/infra/docker-compose.postgresql.yml",'-f',"$root/infra/docker-compose.notification.yml")
-    if(Test-Path -LiteralPath "$root/infra/postgresql/.local/ticket.password"){$p+=@('-f',"$root/infra/docker-compose.notification-ticket-secret.yml")}
+    if(Test-Path -LiteralPath "$root/infra/postgresql/.local/ticket.password"){$p+=@('-f',"$root/infra/docker-compose.ticket.yml",'-f',"$root/infra/docker-compose.ticket-postgresql.yml")}
     $p+=@('--profile','postgresql','--profile','notification')
     & docker @p restart --timeout 30 postgres
     if($LASTEXITCODE-ne 0){throw 'PostgreSQL restart failed'}

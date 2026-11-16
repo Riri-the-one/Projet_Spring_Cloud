@@ -12,6 +12,7 @@ class ProbeDecoderTest {
         assertThatThrownBy(()->decoder.decode(probe(id).replace("NotificationProbe","BookingConfirmed"))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(()->decoder.decode(probe(id).replace("infra-test","booking-service"))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(()->decoder.decode("not-json")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(()->decoder.decode(probe(id).replace("\"schemaVersion\":1","\"schemaVersion\":4294967297"))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(()->decoder.decode(probe(id).replace("\"schemaVersion\":1","\"schemaVersion\":1.5"))).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(()->decoder.decode("x".repeat(9000))).isInstanceOf(IllegalArgumentException.class);
     }
