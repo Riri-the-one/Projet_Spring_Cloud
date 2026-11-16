@@ -1,6 +1,9 @@
 # Notification Service autonome — guide Arij
 
 Notification est intégré avec les overlays Ticket PostgreSQL de la PR #9 fusionnée.
+Pour le lancement complet et les résultats de clôture, voir [livraison finale](ARIJ_FINAL_DELIVERY.md).
+Gateway expose uniquement GET /api/notifications/me et GET /api/notifications/{UUID}.
+Les opérations d'administration restent accessibles directement en local avec ADMIN.
 Les sources métier Customer, Ticket, Event, Booking et Payment ne sont pas modifiées.
 
 ## Ce qui fonctionne
@@ -116,11 +119,11 @@ Ne pas présenter cette démonstration technique comme une réservation réellem
 
 Les versions sont gérées par Boot 4.0.8 : Spring Kafka 4.0.7 et client 4.1.2, testé contre
 le broker officiel 4.4.0 déjà fourni. Aucun changement du BOM ou des autres services.
-Le workflow Notification integration est indépendant des quatre jobs CI existants.
+Le workflow Notification integration est indépendant des cinq jobs CI principaux.
 
 ## Ce qui attend le groupe
 
-Résultats locaux du 16 novembre 2026 : 31 tests rapides Notification et 19 tests
+Résultats locaux du 16 novembre 2026 : 32 tests rapides Notification et 20 tests
 PostgreSQL/Kafka réussis, puis reprise persistante rejouée après redémarrage PostgreSQL
 et d'une JVM. Les tests HTTP avec Keycloak réel passent ; Booking reste fonctionnel
 avec Notification arrêté. Les confirmations et historiques de test sont exclusivement

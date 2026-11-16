@@ -1,5 +1,7 @@
 # TicketFlow
 
+Contribution Arij et démonstration Windows : [guide de livraison final](docs/ARIJ_FINAL_DELIVERY.md).
+
 **A hands-on reference project for learning Spring Cloud and microservices, built around a real-world ticket booking platform.**
 
 TicketFlow is an open-source educational project that takes you from

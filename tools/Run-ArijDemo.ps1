@@ -1,4 +1,4 @@
-param([switch]$Build,[switch]$Showcase,[switch]$TechnicalTests)
+param([switch]$Build,[switch]$Showcase,[switch]$TechnicalTests,[switch]$FailureTests)
 $ErrorActionPreference='Stop'
 $root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 function Docker-Checked([string[]]$Arguments) {
@@ -30,7 +30,12 @@ try {
     }
     Docker-Checked ($compose+@('up','-d','--no-deps','--wait','--wait-timeout','240','kafka'))
     Docker-Checked ($compose+@('exec','-T','kafka','bash','/opt/ticketflow-kafka/init-topics.sh'))
-    if($Build){Docker-Checked ($compose+@('build','customer-service','api-gateway','ticket-service','notification-service'))}
+    if($Build){
+        # Keep memory usage bounded on a university laptop running the complete stack.
+        foreach($service in @('customer-service','api-gateway','ticket-service','notification-service')) {
+            Docker-Checked ($compose+@('build',$service))
+        }
+    }
     Docker-Checked ($compose+@('up','-d','--wait','--wait-timeout','300'))
     Script-Checked 'Test-ArijQuality.ps1'
     if($Showcase) {
@@ -40,8 +45,21 @@ try {
         Node-Checked @('tools/Test-NotificationHttp.mjs')
         Node-Checked @('tools/Test-NotificationHttp.mjs','--gateway')
     }
+    if($FailureTests) {
+        foreach($service in @('notification-service','kafka')) {
+            Write-Host "Failure scenario: existing Customer/catalogue/PENDING booking while $service is stopped. No payment confirmation."
+            try {
+                Docker-Checked ($compose+@('stop','--timeout','30',$service))
+                Node-Checked @('tools/Test-KeycloakIntegration.mjs')
+            } finally {
+                Docker-Checked ($compose+@('up','-d','--no-deps','--wait','--wait-timeout','300',$service))
+            }
+        }
+        Script-Checked 'Test-ArijQuality.ps1'
+    }
     if($TechnicalTests) {
         Write-Host 'Isolated technical fixtures only. PostgreSQL/Kafka may restart; do not run during business writes.'
+        Script-Checked 'Test-ArijH2Profiles.ps1'
         Script-Checked 'Test-KafkaInfra.ps1'
         Script-Checked 'Test-CustomerPostgresql.ps1'
         Script-Checked 'Test-TicketPostgresql.ps1'

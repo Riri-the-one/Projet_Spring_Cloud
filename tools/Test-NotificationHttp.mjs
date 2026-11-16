@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { demoTokens } from './lib/KeycloakDemo.mjs';
+import { setTimeout as delay } from 'node:timers/promises';
 const viaGateway=process.argv.includes('--gateway');
 const base=viaGateway?(process.env.TICKETFLOW_GATEWAY_URL??'http://localhost:8080'):(process.env.TICKETFLOW_NOTIFICATION_URL??'http://localhost:8085');
 const url=new URL(base);assert.equal(url.protocol,'http:');assert.ok(['localhost','127.0.0.1'].includes(url.hostname));
@@ -11,6 +12,15 @@ async function check(method,path,status,token){
 await check('GET','/actuator/health',200);
 await check('GET','/api/notifications/me',401);
 await check('GET','/api/notifications/me',403,tokens.get('demo-organizer'));
+if(viaGateway){
+  const deadline=Date.now()+180000;
+  while(true){
+    const response=await fetch(base+'/api/notifications/me',{headers:{Authorization:`Bearer ${tokens.get('demo-customer')}`},signal:AbortSignal.timeout(15000)});
+    if(response.status===200)break;
+    assert.equal(response.status,503,'Discovery readiness must not hide authentication/profile errors');
+    assert.ok(Date.now()<deadline,'Notification discovery did not converge');await delay(3000);
+  }
+}
 const own=await check('GET','/api/notifications/me',200,tokens.get('demo-customer'));assert.deepEqual(await own.json(),[]);
 await check('GET','/api/notifications',403,tokens.get('demo-customer'));
 await check('GET','/api/notifications',viaGateway?403:200,tokens.get('demo-admin'));
