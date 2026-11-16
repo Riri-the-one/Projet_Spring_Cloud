@@ -95,6 +95,9 @@ public class GatewaySecurityConfig {
                             .hasAnyRole("CUSTOMER", "ADMIN");
                     exchanges.pathMatchers(HttpMethod.POST, "/api/bookings", "/api/bookings/",
                             "/api/bookings/*/cancel").hasAnyRole("CUSTOMER", "ADMIN");
+                    exchanges.pathMatchers(HttpMethod.GET, "/api/tickets/me", "/api/tickets/*", "/api/tickets/bookings/*")
+                            .hasAnyRole("CUSTOMER", "ADMIN");
+                    exchanges.pathMatchers(HttpMethod.POST, "/api/tickets/*/validity").hasAnyRole("CUSTOMER", "ADMIN");
                     exchanges.anyExchange().denyAll();
                 })
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(token -> {
