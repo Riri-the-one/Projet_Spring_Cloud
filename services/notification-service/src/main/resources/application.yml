@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: notification-service
+  config:
+    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+  cloud:
+    config:
+      label: main
+  flyway:
+    enabled: false
+  jpa:
+    open-in-view: false
+  h2:
+    console:
+      enabled: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/ticketflow}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/ticketflow/protocol/openid-connect/certs}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:29092}
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        max.poll.records: 20
+        max.partition.fetch.bytes: 65536
+    listener:
+      ack-mode: record
+      missing-topics-fatal: true
+server:
+  port: 8085
+ticketflow:
+  customer-url: ${CUSTOMER_SERVICE_URL:http://localhost:8081}
+  security:
+    audience: ${TICKETFLOW_JWT_AUDIENCE:ticketflow-api}
+  notification:
+    ingress: "off"
+    max-attempts: 3
+    backoff-ms: 1000
+    delivery-enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+logging:
+  level:
+    org.hibernate.orm.jdbc.error: "OFF"
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"
+    org.springframework.kafka.listener.DefaultErrorHandler: "OFF"
