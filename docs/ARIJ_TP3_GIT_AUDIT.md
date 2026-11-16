@@ -6,8 +6,8 @@ reste opérationnelle ; elle n'est pas présentée comme une validation du mode 
 
 ## Constats réels
 
-- Branche de travail indépendante issue de main b0fc1f5 ; PR #8 déjà fusionnée.
-- PR #9 Ticket PostgreSQL/Gateway reste Draft, non fusionnée et verte sur cinq jobs.
+- Audit initial issu de main b0fc1f5 ; PR #8 déjà fusionnée.
+- Les PR #9 Ticket PostgreSQL/Gateway et #10 Notification sont désormais fusionnées.
 - CONFIG_GIT_URI absent de l'environnement de travail et du conteneur Config Server.
 - Aucun .env ou .env.local racine contenant une URL réelle ; configuration IntelliJ
   locale inspectée pour cette seule clé, aucune mention trouvée.
