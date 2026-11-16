@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: notification-service
+  cloud:
+    config:
+      enabled: false
+  flyway:
+    enabled: false
+  jpa:
+    open-in-view: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://issuer.ticketflow.test/realms/ticketflow
+          jwk-set-uri: http://127.0.0.1:1/certs
+  kafka:
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
+eureka:
+  client:
+    enabled: false
+ticketflow:
+  customer-url: http://127.0.0.1:1
+  security:
+    audience: ticketflow-api
+  notification:
+    ingress: "off"
+    delivery-enabled: false
+    backoff-ms: 0
+    simulated-fail-first: 2
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+logging:
+  level:
+    org.hibernate.orm.jdbc.error: "OFF"
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"

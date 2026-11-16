@@ -1,0 +1,24 @@
+name: Notification integration
+on:
+  pull_request:
+    paths:
+      - 'services/notification-service/**'
+      - 'tools/*Notification*'
+      - 'infra/*notification*'
+      - 'infra/postgresql/tools/*notification*'
+      - '.github/workflows/notification-ci.yml'
+  push:
+    branches: [main]
+jobs:
+  notification-postgresql-kafka:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Verify isolated provisioning, Kafka consumption, retries and durable resumption
+        shell: pwsh
+        run: ./tools/Test-NotificationInfra.ps1

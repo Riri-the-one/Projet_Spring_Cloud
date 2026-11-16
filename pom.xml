@@ -31,6 +31,7 @@
         <module>services/event-service</module>
         <module>services/booking-service</module>
         <module>services/ticket-service</module>
+        <module>services/notification-service</module>
     </modules>
 
 

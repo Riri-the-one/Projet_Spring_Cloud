@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${NOTIFICATION_DATABASE_URL:jdbc:postgresql://127.0.0.1:5433/ticketflow_notification}
+    username: ticketflow_notification
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/notification
+    clean-disabled: true
+    baseline-on-migrate: false
