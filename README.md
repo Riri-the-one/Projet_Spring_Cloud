@@ -142,6 +142,12 @@ Contributions, issues and exercises are welcome. A `CONTRIBUTING.md` will be
 added soon.
 -->
 
+## Notification Service indépendant
+
+Le [guide Notification](docs/ARIJ_NOTIFICATION_SERVICE.md) décrit PostgreSQL isolé,
+inbox Kafka technique, déduplication, canal simulé et reprises durables. Aucun
+consommateur Booking/Payment n'est branché sans contrat validé.
+
 ## License
 
 To be defined (MIT recommended for an educational project).
