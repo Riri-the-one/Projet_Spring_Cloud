@@ -35,3 +35,8 @@ spring:
               predicates:
                 - Path=/api/tickets/{id}/validity
                 - Method=POST
+            - id: notification-reads
+              uri: lb://notification-service
+              predicates:
+                - Path=/api/notifications/me,/api/notifications/{id:[0-9a-fA-F-]+}
+                - Method=GET

@@ -69,6 +69,7 @@ services:
     environment:
       <<: *client-env
       SERVER_PORT: "8081"
+      EUREKA_INSTANCE_INSTANCE_ID: customer-service:8081
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/ticketflow
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
       TICKETFLOW_JWT_AUDIENCE: ticketflow-api
@@ -122,6 +123,7 @@ services:
     environment:
       <<: *client-env
       SERVER_PORT: "8080"
+      EUREKA_INSTANCE_INSTANCE_ID: api-gateway:8080
       SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_DISCOVERY_LOCATOR_ENABLED: "false"
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/ticketflow
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs

@@ -19,9 +19,9 @@ try{
     $wrapper=if($env:OS-eq 'Windows_NT'){"$root/mvnw.cmd"}else{"$root/mvnw"}
     & $wrapper -B -ntp -f "$root/services/notification-service/pom.xml" -Pnotification-it verify
     if($LASTEXITCODE-ne 0){throw 'Notification PostgreSQL/Kafka integration failed'}
-    $p=@('compose','-f',"$root/infra/docker-compose.yml",'-f',"$root/infra/docker-compose.postgresql.yml",'-f',"$root/infra/docker-compose.notification.yml")
+    $p=@('compose','-f',"$root/infra/docker-compose.yml",'-f',"$root/infra/docker-compose.postgresql.yml")
     if(Test-Path -LiteralPath "$root/infra/postgresql/.local/ticket.password"){$p+=@('-f',"$root/infra/docker-compose.ticket.yml",'-f',"$root/infra/docker-compose.ticket-postgresql.yml")}
-    $p+=@('--profile','postgresql','--profile','notification')
+    $p+=@('-f',"$root/infra/docker-compose.notification.yml",'--profile','postgresql','--profile','notification')
     & docker @p restart --timeout 30 postgres
     if($LASTEXITCODE-ne 0){throw 'PostgreSQL restart failed'}
     & docker @p up -d --no-deps --wait --wait-timeout 180 postgres

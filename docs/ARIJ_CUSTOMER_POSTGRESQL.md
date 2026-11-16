@@ -169,4 +169,5 @@ Booking à Salma. Leur comportement métier n'est pas modifié. Le contrat inter
 Les IDs des profils H2 ne sont pas transférés : un futur import devra préserver et
 réconcilier les références avec Booking avant toute utilisation de données durables.
 La suppression administrative Customer reste à coordonner avec ces références.
-Ticket Service et Notification Service ne sont pas commencés.
+À la livraison de cette phase, Ticket et Notification n'étaient pas commencés.
+Ils sont désormais développés ; voir [livraison finale Arij](ARIJ_FINAL_DELIVERY.md).

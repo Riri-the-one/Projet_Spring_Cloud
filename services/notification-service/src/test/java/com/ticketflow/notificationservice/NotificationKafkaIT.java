@@ -18,6 +18,7 @@ class NotificationKafkaIT {
         p.add("ticketflow.notification.probe-group",()->"ticketflow-notification-probe-"+System.getenv("NOTIFICATION_TEST_SCHEMA"));
     }
     @Autowired KafkaTemplate<String,String> kafka;@Autowired NotificationRepo notifications;@Autowired ReceiptRepo receipts;@Autowired QuarantineRepo quarantine;@Autowired DeliveryWorker worker;
+    @Autowired org.springframework.kafka.config.KafkaListenerEndpointRegistry listeners;
     void await(java.util.function.BooleanSupplier condition)throws Exception{long until=System.nanoTime()+Duration.ofSeconds(30).toNanos();while(!condition.getAsBoolean()&&System.nanoTime()<until)Thread.sleep(100);assertThat(condition.getAsBoolean()).isTrue();}
     @Test void realKafkaConsumptionReplayAndQuarantineCommitOnlyAfterPersistence()throws Exception{
         UUID id=UUID.randomUUID();String payload=ProbeDecoderTest.probe(id);String topic="ticketflow.infra.notification.probe.v1";
@@ -29,5 +30,21 @@ class NotificationKafkaIT {
         assertThat(notifications.findById(id).orElseThrow().getCustomerId()).isEqualTo(456);assertThat(notifications.findById(id).orElseThrow().getAttempts()).isEqualTo(3);
         var bad=kafka.send(topic,"invalid","not-json").get(15,TimeUnit.SECONDS).getRecordMetadata();
         await(()->quarantine.existsByTopicAndPartitionAndOffset(topic,bad.partition(),bad.offset()));
+    }
+    @Test void consumerResumesDurableRecordPublishedWhileItWasStopped()throws Exception{
+        UUID id=UUID.randomUUID();String payload=ProbeDecoderTest.probe(id);
+        listeners.stop();
+        try {
+            kafka.send("ticketflow.infra.notification.probe.v1",id.toString(),payload).get(15,TimeUnit.SECONDS);
+            assertThat(notifications.existsById(id)).isFalse();
+        } finally { listeners.start(); }
+        await(()->notifications.existsById(id));
+        worker.deliver(id);worker.deliver(id);worker.deliver(id);
+        assertThat(receipts.findById(id)).isPresent();
+        kafka.send("ticketflow.infra.notification.probe.v1",id.toString(),payload).get(15,TimeUnit.SECONDS);
+        var marker=kafka.send("ticketflow.infra.notification.probe.v1",id.toString(),payload.replace("\"customerId\":456","\"customerId\":999")).get(15,TimeUnit.SECONDS).getRecordMetadata();
+        await(()->quarantine.existsByTopicAndPartitionAndOffset(marker.topic(),marker.partition(),marker.offset()));
+        assertThat(notifications.findById(id).orElseThrow().getAttempts()).isEqualTo(3);
+        assertThat(receipts.findById(id)).isPresent();
     }
 }
