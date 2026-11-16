@@ -1,102 +1,45 @@
-# Bilan Arij et intégration — 16 novembre 2026
+﻿# Intégration et qualité Arij — 16 novembre 2026
 
-Ce bilan distingue le travail développé, les PR à valider et les dépendances métier.
-Aucune PR n'a été fusionnée pendant cette mission. Main reste à **b0fc1f5**.
+Les PR #9 Ticket PostgreSQL/Gateway, #10 Notification et #11 audit TP3 sont fusionnées. Ce bilan remplace la combinaison provisoire des branches en worktree.
 
-| Lot | État réel | Preuves | Revue / dépendance |
-| --- | --- | --- | --- |
-| Customer sécurisé et PostgreSQL | Fusionné et fonctionnel | JWT/propriété, Flyway, démonstration Docker et CI | PR #4/#7 fusionnées |
-| PostgreSQL/Kafka communs | Fonctionnels | Comptes isolés, volumes, topics et tests réels | PR #5/#6 fusionnées |
-| Ticket cœur métier | Fusionné, entrée métier non branchée | 27 tests initiaux, émission idempotente par place | PR #8 fusionnée ; contrat Salma manquant |
-| Ticket persistant + Gateway | Développé, en attente de validation personnelle | 211 tests rapides, 30 PostgreSQL, cinq jobs verts | PR #9 conservée en Draft |
-| Notification autonome | Développé, en revue ; intégration métier bloquée | 31 tests Notification, 19 PostgreSQL/Kafka, reprise et JWT réels | PR #10 Draft ; contrats Salma manquants |
-| TP3 Git externe | Audit terminé, validation réelle bloquée | Mode native confirmé, URL absente, garde code 2 | PR #11 Draft ; URL et accès réels nécessaires |
-| Compatibilité et qualité | Contrôles exécutés | 242 tests combinés, onze conteneurs, vingt refus DB | Cette PR indépendante |
+| Lot | État vérifié | Limite |
+| --- | --- | --- |
+| Customer sécurisé/PostgreSQL | JWT, propriété, Flyway, persistance | Pas de migration Event/Booking |
+| PostgreSQL commun | Cinq comptes métier isolés, vingt refus CONNECT | Sauvegarde de production à organiser |
+| Kafka commun | KRaft, quatre topics métier, tests techniques persistants | Pas de confirmation de paiement inventée |
+| Ticket | Émission atomique/idempotente, PostgreSQL, JWT et Gateway | Contrat BookingConfirmed à valider avec Salma |
+| Notification | Inbox durable, déduplication, reprises, quarantaine et JWT | Canal simulé ; consommateurs métier désactivés |
+| TP3 Git externe | Audit et procédure prêts, mode native observé | URL/droits du véritable dépôt manquants |
 
-## Combinaison de revue sans fusion
+## Preuves reproductibles
 
-Les diffs exacts #9 à **7b056a0** et #10 à **422263b** ont été appliqués en trois voies
-dans un worktree détaché de main, sous target/arij-validation, sans conflit, commit
-ou changement de référence main. `mvnw verify` y réussit avec **242 tests** : Customer 58,
-Gateway 68, Discovery 2, Config 1, Event 21, Booking 19, Ticket 42, Notification 31.
-Ces chiffres ne sont pas ceux de main seul : main conserve 183 tests ; #9 ajoute 28
-gardes/scénarios et #10 ajoute 31 tests indépendants.
-
-Les suites PostgreSQL restent distinctes : 30 cas Ticket et 19 Notification/Kafka,
-avec relecture persistante dans une nouvelle JVM après redémarrage PostgreSQL.
-Les données techniques sont dans des schémas de test séparés. Aucun billet payé ou
-notification métier n'a été créé artificiellement dans le runtime public.
-
-La [CI Notification dédiée](https://github.com/Riri-the-one/Projet_Spring_Cloud/actions/runs/43789395285)
-et sa [CI monorepo](https://github.com/Riri-the-one/Projet_Spring_Cloud/actions/runs/43789395213)
-sont vertes. La [CI #9](https://github.com/Riri-the-one/Projet_Spring_Cloud/actions/runs/43785209744)
-reste verte sur cinq jobs. La PR #9 n'a pas été marquée prête ni fusionnée.
-
-## Contrôle d'exploitation reproductible
+La CI de main après #10 au commit fec363e est verte : [cinq jobs communs](https://github.com/Riri-the-one/Projet_Spring_Cloud/actions/runs/43792662953) et [intégration Notification](https://github.com/Riri-the-one/Projet_Spring_Cloud/actions/runs/43792662949).
+Le build complet comporte **243 tests** : Customer 58, Gateway 68, Discovery 2, Config 1, Event 21, Booking 19, Ticket 42, Notification 32. Les suites PostgreSQL séparées couvrent Customer 42, Ticket 30 et Notification/Kafka 19, plus une relecture Ticket/Notification dans une nouvelle JVM après redémarrage.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/Test-ArijQuality.ps1
 ```
 
-Prérequis : les onze conteneurs locaux sont déjà déployés depuis leurs branches de
-revue, avec les secrets de leurs domaines montés dans PostgreSQL pour l'audit. L'outil
-ne déploie ni ne provisionne, n'écrit aucune table et ne publie aucun message Kafka.
-Il vérifie santé, interfaces publiées, noms de volumes, endpoints HTTP, cinq comptes
-PostgreSQL et vingt refus CONNECT, quatre topics métier et OIDC réel Code + PKCE.
-Il n'imprime ni token, ni mot de passe, ni corps de billet/notification.
+Ce contrôle a été réexécuté après fusion de #9/#10 : onze conteneurs sains, ports publiés sur loopback uniquement, trois volumes conservés, cinq bases isolées, quatre topics et authentification OIDC Code + PKCE des trois rôles. Il ne crée aucune donnée ni aucun message. Les secrets Ticket et Notification doivent être montés dans PostgreSQL.
+Event et Booking restent en H2 côté application : leurs bases provisionnées ne constituent pas une migration.
 
-Résultat réel : onze conteneurs sains ; publications sur 127.0.0.1 uniquement. Volumes
-PostgreSQL, Kafka et Keycloak conservés. Les bases Customer/Event/Booking/Ticket/Notification
-sont isolées. Event et Booking restent en H2 côté application jusqu'aux migrations de
-leurs propriétaires ; leur base provisionnée n'est pas présentée comme une migration.
+## Démonstration
 
-## Démonstration devant le professeur
+Les guides [Ticket](ARIJ_TICKET_PERSISTENCE_GATEWAY.md), [Notification](ARIJ_NOTIFICATION_SERVICE.md), [contrats Notification](ARIJ_NOTIFICATION_CONTRACTS.md), [contrat Ticket](ARIJ_TICKET_BOOKING_CONTRACT.md) et [TP3](ARIJ_TP3_GIT_AUDIT.md) restent les références spécialisées.
 
-Après checkout/déploiement des PR correspondantes (sans fusion automatique) :
+- `node tools/Test-KeycloakIntegration.mjs` : Customer, catalogue, réservation PENDING puis annulation ; aucun paiement confirmé.
+- `node tools/Test-KeycloakIntegration.mjs --ticket-gateway` : lectures, 401/403/404 et absence de création arbitraire.
+- `node tools/Test-NotificationHttp.mjs` : contrôles JWT et administration directe.
+- Les scripts PostgreSQL/Kafka utilisent des schémas et messages techniques isolés. Ils peuvent redémarrer PostgreSQL : les exécuter hors écritures métier.
 
-1. Exécuter le contrôle en lecture seule ci-dessus : infrastructure et OIDC.
-2. Sur les sources contenant #9 : `node tools/Test-KeycloakIntegration.mjs --ticket-gateway`.
-   Montrer les lectures vides autorisées, les refus 401/403, 404 et l'absence de création
-   arbitraire. Les billets réels attendent toujours une confirmation fiable.
-3. Sur la branche #10 : `node tools/Test-NotificationHttp.mjs` pour les droits de lecture
-   et d'administration, sans notification fictive en runtime.
-4. `node tools/Test-KeycloakIntegration.mjs` montre le parcours existant catalogue,
-   réservation PENDING puis annulation ; ce parcours a aussi réussi avec Notification arrêté.
-5. `tools/Test-TicketPostgresql.ps1` (#9) et `tools/Test-NotificationInfra.ps1` (#10)
-   démontrent les replays, la concurrence, Kafka technique, les pannes simulées et
-   la reprise durable dans des schémas isolés. Annoncer explicitement qu'il s'agit de tests.
+## Coordination et sécurité restante
 
-Ce n'est **pas** un achat payé de bout en bout. Ne pas affirmer qu'un BookingConfirmed
-réel a circulé, qu'un paiement réel/simulé du service Payment a été validé ou qu'un
-e-mail a été envoyé. Le canal Notification courant produit un reçu simulé transactionnel.
-Les scripts de test PostgreSQL peuvent redémarrer le serveur partagé : ne pas les
-exécuter pendant des écritures métier et conserver tous les volumes.
-
-## Contrats et tâches du groupe
-
-| Responsable | Information ou livraison encore requise |
+| Responsable | Livraison attendue |
 | --- | --- |
-| Salma / Booking | Identité Customer résolue depuis le JWT, règles de propriété, confirmation fiable, lignes/quantités, versions, annulation et publication outbox |
-| Salma / Payment | Paiement admissible, types succès/échec, référence stable, remboursement et événement faisant autorité pour éviter deux notifications d'échec |
-| Manar / Event | Propriété organisateur, visibilité des brouillons, migrations propres Event, événements EventPublished/EventClosed et données de validité utiles aux billets |
-| Manar/Salma / Angular | Parcours authentifié catalogue/client/admin et affichage des API, sans IDs clients tenus pour preuves d'identité |
-| Propriétaire TP3 | URL réelle, accès et label du dépôt Config ; audit de secrets de tout le dépôt/historique et refresh après changement non sensible |
-| Arij après contrats acceptés | Adaptateurs Kafka métier Ticket/Notification, invalidation après annulation/remboursement, stratégie de messages en désordre, éventuelle exposition Gateway Notification |
-| Groupe / production | TLS/ACL Kafka, secrets gérés, sauvegarde/restauration, chiffrement/protection des codes, rétention, supervision et contrôle d'entrée atomique des billets |
+| Salma | Identité Customer fiable, paiement admissible, BookingConfirmed validé, lignes/quantités, annulation/remboursement et publication fiable/outbox |
+| Manar | Propriété organisateur, visibilité des brouillons, migration Event, EventPublished/EventClosed et Angular |
+| Zainab/propriétaire TP3 | URL, droits et label réels du dépôt Config, changement non sensible puis refresh |
+| Arij après contrats acceptés | Adaptateurs métier Ticket/Notification et invalidation selon les règles convenues |
 
-Les propositions détaillées sont dans les PR : [Ticket](https://github.com/Riri-the-one/Projet_Spring_Cloud/pull/9),
-[Notification et contrats Booking/Payment](https://github.com/Riri-the-one/Projet_Spring_Cloud/pull/10),
-[audit TP3](https://github.com/Riri-the-one/Projet_Spring_Cloud/pull/11).
-Une nouvelle branche distante feature/salma-booking a été détectée et respectée ; au
-SHA 4c08ab8 elle ne contient pas de nouveau producteur/contrat définitif. Aucun travail
-de Manar, Salma ou Zainab n'a été écrasé ou développé à leur place.
-
-## Sécurité restante
-
-La fondation JWT ne rend pas Event/Booking entièrement sécurisés : leurs contrôles
-métier restent à leurs propriétaires. Le transport Kafka local est PLAINTEXT sans ACL.
-Les codes Ticket sont sensibles et stockés en clair dans la base locale. Les secrets
-locaux restent des fichiers de développement, pas un gestionnaire de secrets de production.
-Le reçu simulé garantit l'atomicité locale, pas un exactly-once global avec un fournisseur.
-Le vrai TP3 Git et les contrats métier restent bloqués ; aucun de ces points n'est
-marqué terminé par les tests techniques.
+La branche feature/salma-booking à 4c08ab8 ne fournit pas encore de producteur/contrat définitif. Aucun métier des autres membres n'a été modifié.
+Les contrôles métier Event/Booking restent à leurs propriétaires. Kafka local est PLAINTEXT sans ACL. Les codes Ticket et secrets locaux nécessitent une protection adaptée avant production. Le reçu Notification simulé est atomique localement, sans promettre un exactly-once global chez un fournisseur. Aucun consommateur métier non validé n'est actif ; le probe PostgreSQL exige un schéma de test isolé.
