@@ -15,4 +15,16 @@ class NotificationSafetyTest {
         "spring.flyway.baseline-on-migrate,true","spring.flyway.clean-disabled,false","spring.flyway.locations,classpath:db/migration/customer",
         "spring.datasource.password,''","spring.flyway.enabled,false"})
     void unsafeSettingsAreRejected(String key,String value){assertThatThrownBy(()->NotificationConfiguration.validate(safe().withProperty(key,value))).isInstanceOf(IllegalStateException.class);}
+    MockEnvironment probe(){
+        String schema="notification_test_"+"a".repeat(32);
+        return safe().withProperty("ticketflow.notification.ingress","probe").withProperty("spring.flyway.default-schema",schema)
+            .withProperty("spring.datasource.url","jdbc:postgresql://localhost:5433/ticketflow_notification?currentSchema="+schema);
+    }
+    @Test void isolatedProbeUsesTheSameJdbcAndMigrationSchema(){assertThatCode(()->NotificationConfiguration.validate(probe())).doesNotThrowAnyException();}
+    @ParameterizedTest @CsvSource({"spring.datasource.url,jdbc:postgresql://localhost:5433/ticketflow_notification",
+        "spring.datasource.url,jdbc:postgresql://localhost:5433/ticketflow_notification?currentSchema=public",
+        "spring.jpa.properties.hibernate.default_schema,public","spring.flyway.schemas,public"})
+    void probeCannotWriteToPublicThroughAnIndependentSchemaOverride(String key,String value){
+        assertThatThrownBy(()->NotificationConfiguration.validate(probe().withProperty(key,value))).isInstanceOf(IllegalStateException.class);
+    }
 }

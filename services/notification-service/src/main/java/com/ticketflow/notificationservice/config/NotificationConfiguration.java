@@ -20,7 +20,13 @@ public class NotificationConfiguration {
         require(mode.equals("off")||mode.equals("probe"),"Business contracts are not accepted; business ingress forbidden");
         if(mode.equals("probe"))require(env.getProperty("ticketflow.notification.probe-group","ticketflow-notification-probe-v1").startsWith("ticketflow-notification-probe-"),"Isolated probe consumer group required");
         String url=env.getProperty("spring.datasource.url","");
-        if(pg&&mode.equals("probe"))require(env.getProperty("spring.flyway.default-schema","public").matches("notification_test_[a-f0-9]{32}"),"Technical Kafka probes require an isolated test schema");
+        if(pg&&mode.equals("probe")) {
+            String schema=env.getProperty("spring.flyway.default-schema","public");
+            require(schema.matches("notification_test_[a-f0-9]{32}"),"Technical Kafka probes require an isolated test schema");
+            require(url.endsWith("?currentSchema="+schema),"Probe JDBC schema must match its isolated migrations");
+            require(schema.equals(env.getProperty("spring.jpa.properties.hibernate.default_schema",schema)),"Probe Hibernate schema must be isolated");
+            require(schema.equals(env.getProperty("spring.flyway.schemas",schema)),"Probe migration schemas must be isolated");
+        }
         if(h2){require(url.startsWith("jdbc:h2:mem:"),"In-memory Notification demo required");require(!env.getProperty("spring.flyway.enabled",Boolean.class,false),"No Flyway in H2 demo");}
         else{
             require(url.matches("jdbc:postgresql://[^/]+/ticketflow_notification(?:\\?.*)?"),"Notification database required");

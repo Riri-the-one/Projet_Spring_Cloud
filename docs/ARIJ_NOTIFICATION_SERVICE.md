@@ -123,7 +123,7 @@ Le workflow Notification integration est indépendant des cinq jobs CI principau
 
 ## Ce qui attend le groupe
 
-Résultats locaux du 16 novembre 2026 : 32 tests rapides Notification et 20 tests
+Résultats locaux du 16 novembre 2026 : 37 tests rapides Notification et 20 tests
 PostgreSQL/Kafka réussis, puis reprise persistante rejouée après redémarrage PostgreSQL
 et d'une JVM. Les tests HTTP avec Keycloak réel passent ; Booking reste fonctionnel
 avec Notification arrêté. Les confirmations et historiques de test sont exclusivement

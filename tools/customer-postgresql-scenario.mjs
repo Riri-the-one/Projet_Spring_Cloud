@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
+import { existsSync } from 'node:fs';
 
 export async function verifyCustomerPostgresql({ customer, organizer, admin, customerService, fetchTimed }) {
   async function api(method, path, expected, token, body) {
@@ -16,7 +17,11 @@ export async function verifyCustomerPostgresql({ customer, organizer, admin, cus
     return response;
   }
   const compose = ['compose', '-f', 'infra/docker-compose.yml', '-f', 'infra/docker-compose.postgresql.yml',
-    '-f', 'infra/docker-compose.customer-postgresql.yml', '--profile', 'postgresql'];
+    '-f', 'infra/docker-compose.customer-postgresql.yml'];
+  // Keep the existing domain mounts and their canonical order on the shared cluster.
+  if(existsSync('infra/postgresql/.local/ticket.password')) compose.push('-f','infra/docker-compose.ticket.yml','-f','infra/docker-compose.ticket-postgresql.yml');
+  if(existsSync('infra/postgresql/.local/notification.password')) compose.push('-f','infra/docker-compose.notification.yml');
+  compose.push('--profile','postgresql');
   function docker(args, capture = false) {
     const result = spawnSync('docker', [...compose, ...args], { encoding: 'utf8', timeout: 240000 });
     if (result.status !== 0) throw new Error(`Docker Customer validation failed (${args[0]})`);

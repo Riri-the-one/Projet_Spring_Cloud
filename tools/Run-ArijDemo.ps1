@@ -62,6 +62,7 @@ try {
         Script-Checked 'Test-ArijH2Profiles.ps1'
         Script-Checked 'Test-KafkaInfra.ps1'
         Script-Checked 'Test-CustomerPostgresql.ps1'
+        Node-Checked @('tools/Test-KeycloakIntegration.mjs','--customer-postgresql')
         Script-Checked 'Test-TicketPostgresql.ps1'
         Script-Checked 'Test-NotificationInfra.ps1'
         # Restore the complete set of mounts/overlays after component-specific verification.
