@@ -19,10 +19,22 @@ public class EventService {
         this.repo = repo;
     }
 
+
     public Event create(EventRequest request) {
-        return repo.save(new Event(request.title(), request.description(), request.venue(),
-                request.startsAt(), request.price(), request.capacity()));
+        Event event = new Event(
+                request.title(),
+                request.description(),
+                request.venue(),
+                request.startsAt(),
+                request.price(),
+                request.capacity()
+        );
+
+        event.changerCategorie(request.categorie());
+
+        return repo.save(event);
     }
+
 
     @Transactional(readOnly = true)
     public Event get(Long id) {
@@ -38,12 +50,24 @@ public class EventService {
         return repo.findByStatusAndVenueIgnoreCaseOrderByStartsAtAsc(EventStatus.PUBLISHED, venue.trim());
     }
 
+
     public Event update(Long id, EventRequest request) {
         Event event = get(id);
-        event.update(request.title(), request.description(), request.venue(),
-                request.startsAt(), request.price(), request.capacity());
+
+        event.update(
+                request.title(),
+                request.description(),
+                request.venue(),
+                request.startsAt(),
+                request.price(),
+                request.capacity()
+        );
+
+        event.changerCategorie(request.categorie());
+
         return event;
     }
+
 
     public Event publish(Long id) {
         Event event = get(id);
