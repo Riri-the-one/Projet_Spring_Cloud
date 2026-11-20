@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
+import com.ticketflow.eventservice.exceptions.InvalidEventStateException;
 import com.ticketflow.eventservice.dto.EventRequest;
 import com.ticketflow.eventservice.entities.Event;
 import com.ticketflow.eventservice.entities.EventStatus;
@@ -107,6 +107,35 @@ class EventServiceTest {
 
         // 5. Vérifier que le repository a été appelé
         verify(repo).save(any(Event.class));
+    }
+    @Test
+    void publishedEventCapacityCannotBeReduced() {
+
+        Event event = new Event(
+                "Concert",
+                "Live",
+                "Casablanca",
+                Instant.now().plus(30, ChronoUnit.DAYS),
+                new BigDecimal("150.00"),
+                100
+        );
+
+        // Publier l'événement
+        event.publish();
+
+        // Essayer de réduire la capacité de 100 à 50
+        assertThatThrownBy(() -> event.update(
+                "Concert",
+                "Live",
+                "Casablanca",
+                Instant.now().plus(30, ChronoUnit.DAYS),
+                new BigDecimal("150.00"),
+                50
+        ))
+                .isInstanceOf(InvalidEventStateException.class);
+
+        // Vérifier que la capacité reste à 100
+        assertThat(event.getCapacity()).isEqualTo(100);
     }
 
 }
