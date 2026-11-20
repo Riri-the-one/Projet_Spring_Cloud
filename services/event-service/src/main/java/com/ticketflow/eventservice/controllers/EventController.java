@@ -37,7 +37,7 @@ public class EventController {
 
     @GetMapping("/{id}")
     EventResponse get(@PathVariable Long id) {
-        return EventResponse.from(service.get(id));
+        return EventResponse.from(service.getPublished(id));
     }
 
     /** Public catalog: PUBLISHED events only. */

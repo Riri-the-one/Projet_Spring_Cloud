@@ -40,7 +40,14 @@ public class EventService {
     public Event get(Long id) {
         return repo.findById(id).orElseThrow(() -> new EventNotFoundException(id));
     }
-
+    @Transactional(readOnly = true)
+    public Event getPublished(Long id) {
+        Event event = get(id);
+        if (event.getStatus() != EventStatus.PUBLISHED) {
+            throw new EventNotFoundException(id);
+        }
+        return event;
+    }
     /** The public catalog: only PUBLISHED events, optionally filtered by venue. */
     @Transactional(readOnly = true)
     public List<Event> listPublished(String venue) {

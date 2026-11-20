@@ -131,7 +131,20 @@ class EventControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.capacity").value(150));
     }
+    @Test
+    void eventDetailIsVisibleOnlyAfterPublication() throws Exception {
+        String id = createEvent(uniqueTitle("visibility"), 100);
 
+        mockMvc.perform(get("/api/events/{id}", id))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/api/events/{id}/publish", id))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/events/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PUBLISHED"));
+    }
     @Test
     void unknownEventReturns404() throws Exception {
         mockMvc.perform(get("/api/events/{id}", 999999)).andExpect(status().isNotFound());

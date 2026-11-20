@@ -73,10 +73,8 @@ public class GatewaySecurityConfig {
                 .requestCache(cache -> cache.requestCache(NoOpServerRequestCache.getInstance()))
                 .authorizeExchange(exchanges -> {
                     exchanges.pathMatchers(HttpMethod.GET, "/actuator/health").permitAll();
-                    exchanges.pathMatchers(HttpMethod.GET, "/api/events", "/api/events/").permitAll();
-                    // Detail can contain drafts today: restrict until Manar implements visibility.
-                    exchanges.pathMatchers(HttpMethod.GET, "/api/events/*")
-                            .hasAnyRole("CUSTOMER", "ORGANIZER", "ADMIN");
+                    exchanges.pathMatchers(HttpMethod.GET, "/api/events", "/api/events/", "/api/events/*")
+                            .permitAll();
                     exchanges.pathMatchers(HttpMethod.POST, "/api/events", "/api/events/",
                             "/api/events/*/publish", "/api/events/*/close").hasAnyRole("ORGANIZER", "ADMIN");
                     exchanges.pathMatchers(HttpMethod.PUT, "/api/events/*").hasAnyRole("ORGANIZER", "ADMIN");
