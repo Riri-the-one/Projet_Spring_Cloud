@@ -1,14 +1,14 @@
 package com.ticketflow.bookingservice.entities;
 
 /**
- * PENDING: seats are held (the payment arrives in a later step). CANCELLED: seats released.
- * CONFIRMED is reserved for the payment step: nothing sets it yet.
+ * PENDING: seats are held, waiting for the payment. CONFIRMED: paid.
+ * CANCELLED: seats released by a cancellation. EXPIRED: payment deadline passed, seats released.
  */
 public enum BookingStatus {
-    PENDING, CONFIRMED, CANCELLED;
+    PENDING, CONFIRMED, CANCELLED, EXPIRED;
 
     /** Does a booking in this status hold seats? */
     public boolean holdsSeats() {
-        return this != CANCELLED;
+        return this != CANCELLED && this != EXPIRED;
     }
 }

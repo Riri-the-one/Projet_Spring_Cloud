@@ -47,6 +47,10 @@ public class Booking {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** Payment deadline: a PENDING booking expires after this instant. */
+    @Column
+    private Instant expiresAt;
+
     protected Booking() { // required by JPA
     }
 
@@ -69,7 +73,31 @@ public class Booking {
         if (status == BookingStatus.CANCELLED) {
             throw new BookingRuleException("The booking is already cancelled");
         }
+        if (status == BookingStatus.EXPIRED) {
+            throw new BookingRuleException("The booking has expired");
+        }
         status = BookingStatus.CANCELLED;
+    }
+
+    /** Sets the payment deadline. */
+    public void holdUntil(Instant deadline) {
+        this.expiresAt = deadline;
+    }
+
+    /** PENDING -> CONFIRMED, after a successful payment. */
+    public void confirm() {
+        if (status != BookingStatus.PENDING) {
+            throw new BookingRuleException("Only a pending booking can be confirmed");
+        }
+        status = BookingStatus.CONFIRMED;
+    }
+
+    /** PENDING -> EXPIRED, when the payment deadline has passed. */
+    public void expire() {
+        if (status != BookingStatus.PENDING) {
+            throw new BookingRuleException("Only a pending booking can expire");
+        }
+        status = BookingStatus.EXPIRED;
     }
 
     public Long getId() { return id; }
@@ -81,4 +109,5 @@ public class Booking {
     public BigDecimal getTotalPrice() { return totalPrice; }
     public BookingStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getExpiresAt() { return expiresAt; }
 }

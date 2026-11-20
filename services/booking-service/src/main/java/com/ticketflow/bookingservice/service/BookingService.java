@@ -1,3 +1,4 @@
+
 package com.ticketflow.bookingservice.service;
 
 import com.ticketflow.bookingservice.clients.EventClient;
@@ -9,18 +10,16 @@ import com.ticketflow.bookingservice.exceptions.UpstreamUnavailableException;
 import com.ticketflow.bookingservice.repos.BookingRepo;
 import com.ticketflow.bookingservice.repos.SeatInventoryRepo;
 import feign.FeignException;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+
 import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * The remote call (event-service) happens BEFORE the database transaction: a slow service must not
- * keep a database connection busy. The transaction only does the local work.
- */
 @Service
 public class BookingService {
 
@@ -31,8 +30,14 @@ public class BookingService {
     private final TransactionTemplate tx;
     private final Clock clock;
 
-    public BookingService(EventClient events, BookingRepo bookings, SeatInventoryRepo inventory,
-                          SeatInventoryInitializer initializer, TransactionTemplate tx, Clock clock) {
+    public BookingService(
+            EventClient events,
+            BookingRepo bookings,
+            SeatInventoryRepo inventory,
+            SeatInventoryInitializer initializer,
+            TransactionTemplate tx,
+            Clock clock) {
+
         this.events = events;
         this.bookings = bookings;
         this.inventory = inventory;
@@ -41,69 +46,121 @@ public class BookingService {
         this.clock = clock;
     }
 
-    /** Books {@code quantity} seats of an event for a customer. */
+    /** Creates a booking with a 15-minute payment deadline. */
     public Booking book(Long eventId, Long customerId, int quantity) {
+
         EventView event = fetchEvent(eventId);
+
         if (!"PUBLISHED".equals(event.status())) {
-            throw new BookingRuleException("The event is not open for booking");
+            throw new BookingRuleException(
+                    "The event is not open for booking");
         }
+
         if (!event.startsAt().isAfter(Instant.now(clock))) {
-            throw new BookingRuleException("The event has already started");
+            throw new BookingRuleException(
+                    "The event has already started");
         }
 
         try {
             initializer.ensureExists(eventId, event.capacity());
         } catch (DataAccessException concurrentCreation) {
-            // another request created the counter first: that is fine, it exists now
+            // Another request may have created the counter.
         }
-        return tx.execute(status -> {
-            if (inventory.reserve(eventId, quantity, event.capacity()) == 0) {
-                throw new BookingRuleException("Not enough seats left for this event");
-            }
-            return bookings.save(new Booking(eventId, event.title(), customerId,
-                    quantity, event.price(), Instant.now(clock)));
-        });
-    }
 
-    /** Cancels a booking and gives its seats back. */
-    public Booking cancel(Long id) {
         return tx.execute(status -> {
-            Booking booking = get(id);
-            booking.cancel();
-            inventory.release(booking.getEventId(), booking.getQuantity());
+
+            if (inventory.reserve(
+                    eventId, quantity, event.capacity()) == 0) {
+
+                throw new BookingRuleException(
+                        "Not enough seats left for this event");
+            }
+
+            Booking booking = new Booking(
+                    eventId,
+                    event.title(),
+                    customerId,
+                    quantity,
+                    event.price(),
+                    Instant.now(clock)
+            );
+
+            // Payment must be completed within 15 minutes.
+            booking.holdUntil(
+                    Instant.now(clock).plusSeconds(900)
+            );
+
             return bookings.save(booking);
         });
     }
 
-    public Booking get(Long id) {
-        return bookings.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking " + id + " not found"));
+    /** Cancels a booking and releases its seats. */
+    public Booking cancel(Long id) {
+
+        return tx.execute(status -> {
+
+            Booking booking = bookings.findByIdForUpdate(id)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Booking " + id + " not found"));
+
+            booking.cancel();
+
+            int released = inventory.release(
+                    booking.getEventId(),
+                    booking.getQuantity()
+            );
+
+            if (released != 1) {
+                throw new IllegalStateException(
+                        "Failed to release seats for booking " + id);
+            }
+
+            return bookings.save(booking);
+        });
     }
 
-    /** All bookings, or only those of one customer. Newest first. */
+    /** Finds a booking by its ID. */
+    public Booking get(Long id) {
+
+        return bookings.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Booking " + id + " not found"));
+    }
+
+    /** Lists all bookings or bookings for one customer. */
     public List<Booking> list(Long customerId) {
+
         return customerId == null
                 ? bookings.findAllByOrderByCreatedAtDescIdDesc()
-                : bookings.findByCustomerIdOrderByCreatedAtDescIdDesc(customerId);
+                : bookings.findByCustomerIdOrderByCreatedAtDescIdDesc(
+                customerId);
     }
 
-    /**
-     * Reads the event. Business answers keep their meaning (unknown event = 404); everything else
-     * (timeout, connection refused, 5xx, open circuit) means "event-service is not usable now" = 503.
-     */
+    /** Fetches an event and handles remote service errors. */
     private EventView fetchEvent(Long eventId) {
+
         try {
             return events.get(eventId);
+
         } catch (RuntimeException e) {
-            // The circuit breaker wraps the original exception when there is no fallback
-            Throwable cause = (e instanceof NoFallbackAvailableException && e.getCause() != null)
-                    ? e.getCause() : e;
-            if (cause instanceof FeignException feign && feign.status() == 404) {
-                throw new ResourceNotFoundException("Event " + eventId + " not found");
+
+            Throwable cause =
+                    (e instanceof NoFallbackAvailableException
+                            && e.getCause() != null)
+                            ? e.getCause()
+                            : e;
+
+            if (cause instanceof FeignException feign
+                    && feign.status() == 404) {
+
+                throw new ResourceNotFoundException(
+                        "Event " + eventId + " not found");
             }
-            // Timeout, refused connection, 5xx, or CallNotPermittedException when the circuit is OPEN
-            // (the call is then refused at once, event-service is not even contacted)
-            throw new UpstreamUnavailableException("event service", cause);
+
+            throw new UpstreamUnavailableException(
+                    "event service", cause);
         }
     }
 }
