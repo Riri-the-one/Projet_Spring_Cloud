@@ -1,3 +1,4 @@
+
 package com.ticketflow.bookingservice.controllers;
 
 import com.ticketflow.bookingservice.dto.BookingRequest;
@@ -26,28 +27,65 @@ public class BookingController {
         this.service = service;
     }
 
+    /**
+     * Create a new booking.
+     */
     @PostMapping
-    ResponseEntity<BookingResponse> create(@Valid @RequestBody BookingRequest request) {
+    ResponseEntity<BookingResponse> create(
+            @Valid @RequestBody BookingRequest request) {
+
         BookingResponse created = BookingResponse.from(
-                service.book(request.eventId(), request.customerId(), request.quantity()));
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(created.id()).toUri();
+                service.book(
+                        request.eventId(),
+                        request.customerId(),
+                        request.quantity()
+                )
+        );
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+
         return ResponseEntity.created(location).body(created);
     }
 
-    /** All bookings, newest first. Optional {@code ?customerId=} filter. */
+    /**
+     * List bookings.
+     */
     @GetMapping
-    List<BookingResponse> list(@RequestParam(required = false) Long customerId) {
-        return service.list(customerId).stream().map(BookingResponse::from).toList();
+    List<BookingResponse> list(
+            @RequestParam(required = false) Long customerId) {
+
+        return service.list(customerId)
+                .stream()
+                .map(BookingResponse::from)
+                .toList();
     }
 
+    /**
+     * Get booking by ID.
+     */
     @GetMapping("/{id}")
     BookingResponse get(@PathVariable Long id) {
         return BookingResponse.from(service.get(id));
     }
 
+    /**
+     * Cancel a booking.
+     */
     @PostMapping("/{id}/cancel")
     BookingResponse cancel(@PathVariable Long id) {
         return BookingResponse.from(service.cancel(id));
+    }
+
+    /**
+     * Confirm a booking after successful payment.
+     * Must be secured before public deployment.
+     */
+    @PostMapping("/{id}/confirm")
+    BookingResponse confirm(@PathVariable Long id) {
+        return BookingResponse.from(service.confirm(id));
     }
 }

@@ -4,6 +4,7 @@ package com.ticketflow.bookingservice.service;
 import com.ticketflow.bookingservice.clients.EventClient;
 import com.ticketflow.bookingservice.clients.EventView;
 import com.ticketflow.bookingservice.entities.Booking;
+import com.ticketflow.bookingservice.entities.BookingStatus;
 import com.ticketflow.bookingservice.exceptions.BookingRuleException;
 import com.ticketflow.bookingservice.exceptions.ResourceNotFoundException;
 import com.ticketflow.bookingservice.exceptions.UpstreamUnavailableException;
@@ -46,7 +47,9 @@ public class BookingService {
         this.clock = clock;
     }
 
-    /** Creates a booking with a 15-minute payment deadline. */
+    /**
+     * Creates a booking with a 15-minute payment deadline.
+     */
     public Booking book(Long eventId, Long customerId, int quantity) {
 
         EventView event = fetchEvent(eventId);
@@ -94,7 +97,9 @@ public class BookingService {
         });
     }
 
-    /** Cancels a booking and releases its seats. */
+    /**
+     * Cancels a booking and releases its seats.
+     */
     public Booking cancel(Long id) {
 
         return tx.execute(status -> {
@@ -120,7 +125,40 @@ public class BookingService {
         });
     }
 
-    /** Finds a booking by its ID. */
+    /**
+     * Confirms a booking after successful payment.
+     */
+    public Booking confirm(Long id) {
+
+        return tx.execute(status -> {
+
+            Booking booking = bookings.findByIdForUpdate(id)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException(
+                                    "Booking " + id + " not found"));
+
+            // Already confirmed: do not confirm twice.
+            if (booking.getStatus() == BookingStatus.CONFIRMED) {
+                return booking;
+            }
+
+            // Reject expired payment deadlines.
+            if (booking.getExpiresAt() != null
+                    && !Instant.now(clock).isBefore(booking.getExpiresAt())) {
+                throw new BookingRuleException(
+                        "Payment deadline has passed");
+            }
+
+            // Only PENDING bookings can be confirmed.
+            booking.confirm();
+
+            return bookings.save(booking);
+        });
+    }
+
+    /**
+     * Finds a booking by its ID.
+     */
     public Booking get(Long id) {
 
         return bookings.findById(id)
@@ -129,7 +167,9 @@ public class BookingService {
                                 "Booking " + id + " not found"));
     }
 
-    /** Lists all bookings or bookings for one customer. */
+    /**
+     * Lists all bookings or bookings for one customer.
+     */
     public List<Booking> list(Long customerId) {
 
         return customerId == null
@@ -138,7 +178,9 @@ public class BookingService {
                 customerId);
     }
 
-    /** Fetches an event and handles remote service errors. */
+    /**
+     * Fetches an event and handles remote service errors.
+     */
     private EventView fetchEvent(Long eventId) {
 
         try {
