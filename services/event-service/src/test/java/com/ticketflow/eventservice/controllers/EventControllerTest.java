@@ -38,6 +38,7 @@ class EventControllerTest {
 
         when(jwtDecoder.decode(token)).thenReturn(Jwt.withTokenValue(token)
                 .header("alg", "RS256")
+                .claim("aud", java.util.List.of("ticketflow-api"))
                 .claim("iss", "https://keycloak.test/realms/ticketflow")
                 .subject("organizer-test")
                 .claim("realm_access", java.util.Map.of("roles", java.util.List.of("ORGANIZER")))
@@ -192,6 +193,7 @@ class EventControllerTest {
 
         when(jwtDecoder.decode(otherToken)).thenReturn(Jwt.withTokenValue(otherToken)
                 .header("alg", "RS256")
+                .claim("aud", java.util.List.of("ticketflow-api"))
                 .claim("iss", "https://keycloak.test/realms/ticketflow")
                 .subject("other-organizer")
                 .claim("realm_access", java.util.Map.of("roles", java.util.List.of("ORGANIZER")))
@@ -230,6 +232,19 @@ class EventControllerTest {
                         .param("size", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
+    }
+    @Test
+    void myEventsRequiresLoginAndIncludesMyDraft() throws Exception {
+        String title = uniqueTitle("my-draft");
+        createEvent(title, 100);
+
+        mockMvc.perform(get("/api/events/mine"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/events/mine")
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.title=='" + title + "')]").isNotEmpty());
     }
     @Test
     void unknownEventReturns404() throws Exception {

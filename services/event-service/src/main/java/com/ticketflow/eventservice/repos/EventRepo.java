@@ -34,4 +34,8 @@ public interface EventRepo extends JpaRepository<Event, Long> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
+    List<Event> findByOwnerIssuerAndOwnerSubjectOrderByStartsAtAscIdAsc(
+            String ownerIssuer,
+            String ownerSubject
+    );
 }
