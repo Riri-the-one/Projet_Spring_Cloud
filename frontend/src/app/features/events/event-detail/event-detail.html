@@ -1,0 +1,13 @@
+<a routerLink="/events">Retour au catalogue</a>
+
+@if (loading()) {
+  <p role="status">Chargement de l’événement…</p>
+} @else if (error()) {
+  <p role="alert">{{ error() }}</p>
+} @else if (event(); as details) {
+  <h1>{{ details.title }}</h1>
+  <p>{{ details.description }}</p>
+  <p>Lieu : {{ details.venue }}</p>
+  <p>Date : {{ details.startsAt | date:'dd/MM/yyyy HH:mm' }}</p>
+  <p>Prix : {{ details.price }}</p>
+}
