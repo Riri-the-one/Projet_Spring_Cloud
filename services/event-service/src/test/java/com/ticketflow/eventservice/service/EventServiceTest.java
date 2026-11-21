@@ -59,7 +59,8 @@ class EventServiceTest {
                 Instant.now().plus(30, ChronoUnit.DAYS), new BigDecimal("150.00"), 100);
         when(repo.findById(1L)).thenReturn(Optional.of(event));
 
-        assertThat(service.publish(1L).getStatus()).isEqualTo(EventStatus.PUBLISHED);
+        assertThat(service.publish(1L, null, null, true).getStatus())
+                .isEqualTo(EventStatus.PUBLISHED);
     }
 
     @Test

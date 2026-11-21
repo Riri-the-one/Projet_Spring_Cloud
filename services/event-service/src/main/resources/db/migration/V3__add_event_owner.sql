@@ -1,0 +1,2 @@
+ALTER TABLE events ADD COLUMN owner_issuer VARCHAR(255);
+ALTER TABLE events ADD COLUMN owner_subject VARCHAR(255);

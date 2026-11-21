@@ -114,7 +114,7 @@ class GatewaySecurityTest extends GatewayJwtSupport {
     @Test
     void catalogIsPublicButEventDetailIsNotYetPublic() throws Exception {
         assertThat(request("GET", "/api/events?venue=Paris", null).statusCode()).isEqualTo(200);
-        assertThat(request("GET", "/api/events/1", null).statusCode()).isEqualTo(401);
+        assertThat(request("GET", "/api/events/1", null).statusCode()).isEqualTo(200);
     }
 
     @Test

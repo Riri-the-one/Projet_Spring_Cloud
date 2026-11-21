@@ -1,5 +1,8 @@
 package com.ticketflow.eventservice.controllers;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.server.ResponseStatusException;
 import com.ticketflow.eventservice.dto.EventRequest;
 import com.ticketflow.eventservice.dto.EventResponse;
 import com.ticketflow.eventservice.service.EventService;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 @RestController
 @RequestMapping("/api/events")
@@ -28,36 +32,90 @@ public class EventController {
     }
 
     @PostMapping
-    ResponseEntity<EventResponse> create(@Valid @RequestBody EventRequest request) {
-        EventResponse created = EventResponse.from(service.create(request));
+    ResponseEntity<EventResponse> create(
+            @Valid @RequestBody EventRequest request,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        String issuer = jwt == null ? null : jwt.getClaimAsString("iss");
+        String subject = jwt == null ? null : jwt.getSubject();
+
+        if (issuer == null || issuer.isBlank() || subject == null || subject.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+
+        EventResponse created = EventResponse.from(service.create(request, issuer, subject));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{id}").buildAndExpand(created.id()).toUri();
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+
         return ResponseEntity.created(location).body(created);
     }
 
     @GetMapping("/{id}")
     EventResponse get(@PathVariable Long id) {
-        return EventResponse.from(service.get(id));
+        return EventResponse.from(service.getPublished(id));
     }
 
     /** Public catalog: PUBLISHED events only. */
     @GetMapping
-    List<EventResponse> list(@RequestParam(required = false) String venue) {
-        return service.listPublished(venue).stream().map(EventResponse::from).toList();
+    ResponseEntity<List<EventResponse>> list(
+            @RequestParam(required = false) String venue,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        if (keyword == null && page == null && size == null) {
+            return ResponseEntity.ok(
+                    service.listPublished(venue).stream().map(EventResponse::from).toList()
+            );
+        }
+
+        int pageNumber = page == null ? 0 : page;
+        int pageSize = size == null ? 20 : size;
+
+        if (pageNumber < 0 || pageSize < 1 || pageSize > 100
+                || (long) pageNumber * pageSize > Integer.MAX_VALUE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pagination invalide");
+        }
+
+        var results = service.searchPublished(venue, keyword, pageNumber, pageSize);
+
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(results.getTotalElements()))
+                .body(results.map(EventResponse::from).getContent());
     }
 
     @PutMapping("/{id}")
-    EventResponse update(@PathVariable Long id, @Valid @RequestBody EventRequest request) {
-        return EventResponse.from(service.update(id, request));
+    EventResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody EventRequest request,
+            JwtAuthenticationToken authentication
+    ) {
+        Jwt jwt = authentication.getToken();
+        return EventResponse.from(service.update(
+                id, request, jwt.getClaimAsString("iss"), jwt.getSubject(), isAdmin(authentication)
+        ));
     }
 
     @PostMapping("/{id}/publish")
-    EventResponse publish(@PathVariable Long id) {
-        return EventResponse.from(service.publish(id));
+    EventResponse publish(@PathVariable Long id, JwtAuthenticationToken authentication) {
+        Jwt jwt = authentication.getToken();
+        return EventResponse.from(service.publish(
+                id, jwt.getClaimAsString("iss"), jwt.getSubject(), isAdmin(authentication)
+        ));
     }
 
     @PostMapping("/{id}/close")
-    EventResponse close(@PathVariable Long id) {
-        return EventResponse.from(service.close(id));
+    EventResponse close(@PathVariable Long id, JwtAuthenticationToken authentication) {
+        Jwt jwt = authentication.getToken();
+        return EventResponse.from(service.close(
+                id, jwt.getClaimAsString("iss"), jwt.getSubject(), isAdmin(authentication)
+        ));
+    }
+
+    private boolean isAdmin(JwtAuthenticationToken authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 }
