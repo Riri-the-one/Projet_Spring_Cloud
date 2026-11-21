@@ -24,6 +24,12 @@ public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "owner_issuer", length = 255, updatable = false)
+    private String ownerIssuer;
+
+    @Column(name = "owner_subject", length = 255, updatable = false)
+    private String ownerSubject;
+
 
     @Column(nullable = false, length = 150)
     private String title;
@@ -64,7 +70,12 @@ public class Event {
         this.price = price;
         this.capacity = capacity;
     }
-
+    public Event(String title, String description, String venue, Instant startsAt,
+                 BigDecimal price, int capacity, String ownerIssuer, String ownerSubject) {
+        this(title, description, venue, startsAt, price, capacity);
+        this.ownerIssuer = ownerIssuer;
+        this.ownerSubject = ownerSubject;
+    }
     /**
      * Business rules on update:
      * - a CLOSED event cannot be modified;

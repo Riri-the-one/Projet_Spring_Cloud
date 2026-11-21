@@ -16,6 +16,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(properties = "eureka.client.enabled=false")
 @AutoConfigureMockMvc
@@ -23,6 +29,20 @@ class EventControllerTest {
 
     @Autowired
     MockMvc mockMvc;
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
+    @BeforeEach
+    void prepareOrganizerToken() {
+        String token = "organizer-test-token";
+
+        when(jwtDecoder.decode(token)).thenReturn(Jwt.withTokenValue(token)
+                .header("alg", "RS256")
+                .claim("iss", "https://keycloak.test/realms/ticketflow")
+                .subject("organizer-test")
+                .claim("realm_access", java.util.Map.of("roles", java.util.List.of("ORGANIZER")))
+                .build());
+    }
 
     private static String body(String title, Instant startsAt, int capacity) {
         return """
@@ -41,16 +61,19 @@ class EventControllerTest {
     /** Creates a DRAFT event and returns its id, read from the Location header. */
     private String createEvent(String title, int capacity) throws Exception {
         String location = mockMvc.perform(post("/api/events")
+                        .header("Authorization", "Bearer organizer-test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(title, capacity)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getHeader("Location");
+
         return location.substring(location.lastIndexOf('/') + 1);
     }
 
     @Test
     void createReturns201WithLocationAndADraft() throws Exception {
         mockMvc.perform(post("/api/events")
+                        .header("Authorization", "Bearer organizer-test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(uniqueTitle("concert"), 100)))
                 .andExpect(status().isCreated())
@@ -62,6 +85,7 @@ class EventControllerTest {
     @Test
     void rejectsABlankTitleAndAZeroCapacity() throws Exception {
         mockMvc.perform(post("/api/events")
+                        .header("Authorization", "Bearer organizer-test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body("", 0)))
                 .andExpect(status().isBadRequest());
@@ -70,6 +94,7 @@ class EventControllerTest {
     @Test
     void rejectsAStartDateInThePast() throws Exception {
         mockMvc.perform(post("/api/events")
+                        .header("Authorization", "Bearer organizer-test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(uniqueTitle("old"), Instant.now().minus(1, ChronoUnit.DAYS), 100)))
                 .andExpect(status().isBadRequest());
@@ -81,7 +106,10 @@ class EventControllerTest {
         String publishedTitle = uniqueTitle("published");
         createEvent(draftTitle, 100);
         String publishedId = createEvent(publishedTitle, 100);
-        mockMvc.perform(post("/api/events/{id}/publish", publishedId)).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/events/{id}/publish", publishedId)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/events"))
                 .andExpect(status().isOk())
@@ -93,11 +121,13 @@ class EventControllerTest {
     void publishThenClose() throws Exception {
         String id = createEvent(uniqueTitle("flow"), 100);
 
-        mockMvc.perform(post("/api/events/{id}/publish", id))
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
-        mockMvc.perform(post("/api/events/{id}/close", id))
+        mockMvc.perform(post("/api/events/{id}/close", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CLOSED"));
     }
@@ -106,26 +136,35 @@ class EventControllerTest {
     void invalidTransitionsReturn409() throws Exception {
         String id = createEvent(uniqueTitle("transition"), 100);
 
-        // a DRAFT cannot be closed
-        mockMvc.perform(post("/api/events/{id}/close", id)).andExpect(status().isConflict());
+        mockMvc.perform(post("/api/events/{id}/close", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isConflict());
 
-        mockMvc.perform(post("/api/events/{id}/publish", id)).andExpect(status().isOk());
-        // already published
-        mockMvc.perform(post("/api/events/{id}/publish", id)).andExpect(status().isConflict());
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isConflict());
     }
-
     @Test
     void theCapacityOfAPublishedEventCanGrowButNotShrink() throws Exception {
         String title = uniqueTitle("capacity");
         String id = createEvent(title, 100);
-        mockMvc.perform(post("/api/events/{id}/publish", id)).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isOk());
 
         mockMvc.perform(put("/api/events/{id}", id)
+                        .header("Authorization", "Bearer organizer-test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(title, 50)))
                 .andExpect(status().isConflict());
 
         mockMvc.perform(put("/api/events/{id}", id)
+                        .header("Authorization", "Bearer organizer-test-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body(title, 150)))
                 .andExpect(status().isOk())
@@ -138,7 +177,8 @@ class EventControllerTest {
         mockMvc.perform(get("/api/events/{id}", id))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(post("/api/events/{id}/publish", id))
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/events/{id}", id))
@@ -146,7 +186,28 @@ class EventControllerTest {
                 .andExpect(jsonPath("$.status").value("PUBLISHED"));
     }
     @Test
+    void anotherOrganizerCannotPublishTheEvent() throws Exception {
+        String id = createEvent(uniqueTitle("owner"), 100);
+        String otherToken = "other-organizer-token";
+
+        when(jwtDecoder.decode(otherToken)).thenReturn(Jwt.withTokenValue(otherToken)
+                .header("alg", "RS256")
+                .claim("iss", "https://keycloak.test/realms/ticketflow")
+                .subject("other-organizer")
+                .claim("realm_access", java.util.Map.of("roles", java.util.List.of("ORGANIZER")))
+                .build());
+
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer " + otherToken))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isOk());
+    }
+    @Test
     void unknownEventReturns404() throws Exception {
-        mockMvc.perform(get("/api/events/{id}", 999999)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/events/{id}", 999999))
+                .andExpect(status().isNotFound());
     }
 }
