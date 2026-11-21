@@ -1,0 +1,39 @@
+<h1>Événements</h1>
+<form (submit)="$event.preventDefault(); search(keyword.value)">
+  <label for="event-search">Titre de l’événement</label>
+  <input id="event-search" type="search" #keyword />
+  <button type="submit" [disabled]="loading()">Rechercher</button>
+</form>
+
+@if (loading()) {
+  <p role="status">Chargement des événements…</p>
+} @else if (error()) {
+  <p role="alert">{{ error() }}</p>
+} @else {
+  <ul>
+    @for (event of events(); track event.id) {
+      <li>
+        <h2>
+          <a [routerLink]="['/events', event.id]">{{ event.title }}</a>
+        </h2>
+        <p>{{ event.venue }}</p>
+        <p>Prix : {{ event.price }}</p>
+      </li>
+    } @empty {
+      <li>Aucun événement publié.</li>
+    }
+  </ul>
+}
+@if (!loading() && !error() && totalPages() > 1) {
+  <nav aria-label="Pagination des événements">
+    <button type="button" (click)="loadPage(page() - 1)" [disabled]="page() === 0">
+      Précédent
+    </button>
+
+    <span>Page {{ page() + 1 }} sur {{ totalPages() }}</span>
+
+    <button type="button" (click)="loadPage(page() + 1)" [disabled]="page() + 1 >= totalPages()">
+      Suivant
+    </button>
+  </nav>
+}
