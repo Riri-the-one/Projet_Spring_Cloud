@@ -1,0 +1,45 @@
+
+<section class="booking-container">
+  <a routerLink="/events">← Retour aux événements</a>
+
+  <h1>🎟️ Réserver des places</h1>
+
+  @if (booking(); as reservation) {
+  <div class="success">
+    <h2>Réservation créée avec succès !</h2>
+
+    <p>Numéro : #{{ reservation.id }}</p>
+    <p>Événement : {{ reservation.eventTitle }}</p>
+    <p>Nombre de places : {{ reservation.quantity }}</p>
+    <p>Prix total : {{ reservation.totalPrice }} MAD</p>
+    <p>Statut : {{ reservation.status }}</p>
+
+    <p>Votre réservation est enregistrée. Le paiement reste à effectuer.</p>
+  </div>
+  } @else {
+  <form (ngSubmit)="reserve()">
+    <p>Événement n° {{ eventId }}</p>
+
+    <label for="quantity">Nombre de places</label>
+    <input
+      id="quantity"
+      type="number"
+      name="quantity"
+      [(ngModel)]="quantity"
+      min="1"
+      max="10"
+      required
+    />
+
+    <p>Maximum : 10 places par réservation.</p>
+
+    @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+    }
+
+    <button type="submit" [disabled]="loading()">
+      {{ loading() ? 'Réservation en cours...' : 'Confirmer la réservation' }}
+    </button>
+  </form>
+  }
+</section>

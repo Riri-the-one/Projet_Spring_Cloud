@@ -1,9 +1,11 @@
+
 import { HttpClient } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 
 interface EventDetails {
+  id: number;
   title: string;
   description: string | null;
   venue: string;
