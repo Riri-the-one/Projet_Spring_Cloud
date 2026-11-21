@@ -1,0 +1,35 @@
+
+<section class="my-bookings">
+  <h1>🎟️ Mes réservations</h1>
+
+  <a routerLink="/events">← Retour aux événements</a>
+
+  @if (loading()) {
+  <p>Chargement des réservations...</p>
+  } @else if (error()) {
+  <p role="alert">{{ error() }}</p>
+  <button type="button" (click)="loadBookings()">
+    Réessayer
+  </button>
+  } @else if (bookings().length === 0) {
+  <p>Vous n'avez aucune réservation pour le moment.</p>
+  } @else {
+  @for (booking of bookings(); track booking.id) {
+  <div class="booking-card">
+    <h2>{{ booking.eventTitle }}</h2>
+
+    <p>Réservation n° {{ booking.id }}</p>
+    <p>Nombre de places : {{ booking.quantity }}</p>
+    <p>Prix total : {{ booking.totalPrice }} MAD</p>
+    <p>
+      Statut :
+      <strong>{{ booking.status }}</strong>
+    </p>
+
+    <a [routerLink]="['/events', booking.eventId]">
+      Voir l'événement
+    </a>
+  </div>
+  }
+  }
+</section>

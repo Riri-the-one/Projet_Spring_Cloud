@@ -12,15 +12,36 @@
     <p>Événement : {{ reservation.eventTitle }}</p>
     <p>Nombre de places : {{ reservation.quantity }}</p>
     <p>Prix total : {{ reservation.totalPrice }} MAD</p>
-    <p>Statut : {{ reservation.status }}</p>
+    <p>Statut de réservation : {{ reservation.status }}</p>
 
-    <p>Votre réservation est enregistrée. Le paiement reste à effectuer.</p>
+    <h2>💳 Paiement simulé</h2>
+
+    <button
+      type="button"
+      (click)="pay(true)"
+      [disabled]="paying() || !!paymentMessage()"
+    >
+      {{ paying() ? 'Paiement en cours...' : 'Payer maintenant' }}
+    </button>
+
+    <button
+      type="button"
+      (click)="pay(false)"
+      [disabled]="paying() || !!paymentMessage()"
+    >
+      Simuler un échec
+    </button>
+
+    @if (paymentMessage()) {
+    <p role="status">{{ paymentMessage() }}</p>
+    }
   </div>
   } @else {
   <form (ngSubmit)="reserve()">
     <p>Événement n° {{ eventId }}</p>
 
     <label for="quantity">Nombre de places</label>
+
     <input
       id="quantity"
       type="number"

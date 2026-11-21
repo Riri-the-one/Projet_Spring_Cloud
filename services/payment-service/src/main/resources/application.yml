@@ -1,0 +1,19 @@
+
+spring:
+  application:
+    name: payment-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ticketflow_payment
+    username: ticketflow_payment
+    password: ${PAYMENT_DB_PASSWORD}
+
+  flyway:
+    enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: 8084

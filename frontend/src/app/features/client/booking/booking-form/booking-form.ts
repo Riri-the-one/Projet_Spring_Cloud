@@ -16,6 +16,11 @@ interface BookingResponse {
   createdAt: string;
 }
 
+interface PaymentResponse {
+  id: number;
+  status: string;
+}
+
 @Component({
   selector: 'app-booking-form',
   imports: [FormsModule, RouterLink],
@@ -31,7 +36,9 @@ export class BookingForm {
   quantity = 1;
 
   loading = signal(false);
+  paying = signal(false);
   error = signal('');
+  paymentMessage = signal('');
   booking = signal<BookingResponse | null>(null);
 
   reserve(): void {
@@ -66,6 +73,36 @@ export class BookingForm {
       error: () => {
         this.error.set('Impossible de créer la réservation.');
         this.loading.set(false);
+      }
+    });
+  }
+
+  pay(success: boolean): void {
+    const reservation = this.booking();
+
+    if (!reservation || this.paying()) {
+      return;
+    }
+
+    this.paying.set(true);
+    this.paymentMessage.set('');
+
+    this.http.post<PaymentResponse>('/api/payments', {
+      bookingId: reservation.id,
+      amount: reservation.totalPrice,
+      success
+    }).subscribe({
+      next: (payment) => {
+        this.paymentMessage.set(
+          'Paiement enregistré. Statut : ' + payment.status
+        );
+        this.paying.set(false);
+      },
+      error: () => {
+        this.paymentMessage.set(
+          'Impossible de traiter le paiement.'
+        );
+        this.paying.set(false);
       }
     });
   }

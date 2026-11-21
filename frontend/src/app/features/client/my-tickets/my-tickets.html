@@ -1,0 +1,34 @@
+
+<section class="my-tickets">
+  <h1>🎟️ Mes tickets</h1>
+
+  <a routerLink="/events">← Retour aux événements</a>
+
+  @if (loading()) {
+  <p>Chargement des tickets...</p>
+  } @else if (error()) {
+  <p role="alert">{{ error() }}</p>
+  <button type="button" (click)="loadTickets()">
+    Réessayer
+  </button>
+  } @else if (tickets().length === 0) {
+  <p>Vous n'avez aucun ticket pour le moment.</p>
+  } @else {
+  @for (ticket of tickets(); track ticket.id) {
+  <div class="ticket-card">
+    <h2>🎫 Ticket n° {{ ticket.seatIndex }}</h2>
+
+    <p>Réservation : #{{ ticket.bookingId }}</p>
+    <p>Événement : #{{ ticket.eventId }}</p>
+    <p>Référence : {{ ticket.lineId }}</p>
+    <p>Statut : <strong>{{ ticket.status }}</strong></p>
+    <p>Date d'émission : {{ ticket.issuedAt }}</p>
+    <p>Valable jusqu'au : {{ ticket.validUntil }}</p>
+
+    <a [routerLink]="['/events', ticket.eventId]">
+      Voir l'événement
+    </a>
+  </div>
+  }
+  }
+</section>
