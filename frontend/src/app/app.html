@@ -1,4 +1,18 @@
-<header>TicketFlow</header>
+<header>
+  <span>TicketFlow</span>
+
+  @if (auth.authenticated()) {
+    <span>Connecté</span>
+
+    @if (auth.canManageEvents()) {
+      <a routerLink="/organizer/events">Espace organisateur</a>
+    }
+
+    <button type="button" (click)="auth.logout()">Se déconnecter</button>
+  } @else {
+    <button type="button" (click)="auth.login()">Se connecter</button>
+  }
+</header>
 
 <main>
   <router-outlet></router-outlet>

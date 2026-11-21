@@ -74,6 +74,14 @@ public class EventService {
 
         return repo.searchCatalog(EventStatus.PUBLISHED, venueFilter, keywordFilter, pageable);
     }
+    @Transactional(readOnly = true)
+    public List<Event> listOwnedEvents(String issuer, String subject) {
+        if (issuer == null || issuer.isBlank() || subject == null || subject.isBlank()) {
+            throw new AccessDeniedException("Identité du propriétaire manquante.");
+        }
+
+        return repo.findByOwnerIssuerAndOwnerSubjectOrderByStartsAtAscIdAsc(issuer, subject);
+    }
     private Event getManageableEvent(Long id, String issuer, String subject, boolean admin) {
         Event event = get(id);
 

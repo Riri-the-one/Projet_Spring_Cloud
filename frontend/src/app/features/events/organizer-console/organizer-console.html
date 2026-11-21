@@ -1,0 +1,96 @@
+<h1>Espace organisateur</h1>
+<h2>{{ editingEvent() ? 'Modifier un événement' : 'Créer un événement' }}</h2>
+
+<form #eventForm (submit)="create($event, eventForm)">
+  <p>
+    <label for="event-title">Titre</label>
+    <input id="event-title" name="title" required maxlength="150"
+           [value]="editingEvent()?.title ?? ''">
+  </p>
+
+  <p>
+    <label for="event-description">Description</label>
+    <textarea id="event-description" name="description" maxlength="2000"
+              [value]="editingEvent()?.description ?? ''"></textarea>
+  </p>
+
+  <p>
+    <label for="event-venue">Lieu</label>
+    <input id="event-venue" name="venue" required maxlength="255"
+           [value]="editingEvent()?.venue ?? ''">
+  </p>
+
+  <p>
+    <label for="event-start">Date et heure</label>
+    <input id="event-start" name="startsAt" type="datetime-local" required
+           [value]="editingEvent() ? localDateTime(editingEvent()!.startsAt) : ''">
+  </p>
+
+  <p>
+    <label for="event-price">Prix</label>
+    <input id="event-price" name="price" type="number" min="0" step="0.01" required
+           [value]="editingEvent()?.price ?? ''">
+  </p>
+
+  <p>
+    <label for="event-capacity">Nombre de places</label>
+    <input id="event-capacity" name="capacity" type="number" min="1" step="1" required
+           [value]="editingEvent()?.capacity ?? ''">
+  </p>
+
+  <button type="submit" [disabled]="saving()">
+    {{ editingEvent() ? 'Enregistrer' : 'Créer le brouillon' }}
+  </button>
+</form>
+
+@if (error()) {
+  <p role="alert">{{ error() }}</p>
+}
+
+@if (createdEvent(); as event) {
+  <p role="status">{{ event.title }} — ID {{ event.id }} — {{ event.status }}</p>
+
+  @if (event.status === 'DRAFT') {
+    <button type="button" (click)="publish(event.id)" [disabled]="saving()">
+      Publier
+    </button>
+  } @else if (event.status === 'PUBLISHED') {
+    <button type="button" (click)="close(event.id)" [disabled]="saving()">
+      Fermer l’événement
+    </button>
+  }
+}
+
+<section>
+  <h2>Mes événements</h2>
+
+  @if (myEventsLoading()) {
+    <p role="status">Chargement de tes événements…</p>
+  } @else if (myEventsError()) {
+    <p role="alert">{{ myEventsError() }}</p>
+  } @else {
+    <ul>
+      @for (event of myEvents(); track event.id) {
+        <li>
+          <span>{{ event.title }} — ID {{ event.id }} — {{ event.status }}</span>
+          @if (event.status !== 'CLOSED') {
+            <button type="button" (click)="edit(event)" [disabled]="saving()">
+              Modifier
+            </button>
+          }
+          @if (event.status === 'DRAFT') {
+            <button type="button" (click)="publish(event.id)" [disabled]="saving()">
+              Publier
+            </button>
+          } @else if (event.status === 'PUBLISHED') {
+            <button type="button" (click)="close(event.id)" [disabled]="saving()">
+              Fermer l’événement
+            </button>
+          }
+        </li>
+      } @empty {
+        <li>Tu n’as pas encore créé d’événement.</li>
+      }
+    </ul>
+  }
+</section>

@@ -3,6 +3,9 @@ services:
   event-service:
     environment:
       SPRING_PROFILES_ACTIVE: postgres
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/ticketflow"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES: "ticketflow-api,event-service"
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888,configtree:/run/secrets/event/
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticketflow_event
       SPRING_DATASOURCE_USERNAME: ticketflow_event

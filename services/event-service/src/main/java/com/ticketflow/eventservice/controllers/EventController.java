@@ -51,7 +51,15 @@ public class EventController {
 
         return ResponseEntity.created(location).body(created);
     }
+    @GetMapping("/mine")
+    List<EventResponse> mine(JwtAuthenticationToken authentication) {
+        Jwt jwt = authentication.getToken();
 
+        return service.listOwnedEvents(jwt.getClaimAsString("iss"), jwt.getSubject())
+                .stream()
+                .map(EventResponse::from)
+                .toList();
+    }
     @GetMapping("/{id}")
     EventResponse get(@PathVariable Long id) {
         return EventResponse.from(service.getPublished(id));

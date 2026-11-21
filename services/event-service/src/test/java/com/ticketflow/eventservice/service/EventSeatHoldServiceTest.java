@@ -129,6 +129,7 @@ class EventSeatHoldServiceTest {
         String token = "booking-test-token";
         when(jwtDecoder.decode(token)).thenReturn(Jwt.withTokenValue(token)
                 .header("alg", "RS256")
+                .claim("aud", java.util.List.of("event-service"))
                 .subject("booking-test")
                 .build());
 
