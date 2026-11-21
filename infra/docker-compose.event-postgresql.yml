@@ -1,0 +1,18 @@
+# À utiliser avec docker-compose.yml et docker-compose.postgresql.yml.
+services:
+  event-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888,configtree:/run/secrets/event/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticketflow_event
+      SPRING_DATASOURCE_USERNAME: ticketflow_event
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_CLEAN_DISABLED: "true"
+    secrets:
+      - source: postgres_event_password
+        target: /run/secrets/event/spring.datasource.password
+    depends_on:
+      postgres:
+        condition: service_healthy
