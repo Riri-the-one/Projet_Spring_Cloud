@@ -59,8 +59,31 @@ public class EventController {
 
     /** Public catalog: PUBLISHED events only. */
     @GetMapping
-    List<EventResponse> list(@RequestParam(required = false) String venue) {
-        return service.listPublished(venue).stream().map(EventResponse::from).toList();
+    ResponseEntity<List<EventResponse>> list(
+            @RequestParam(required = false) String venue,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        if (keyword == null && page == null && size == null) {
+            return ResponseEntity.ok(
+                    service.listPublished(venue).stream().map(EventResponse::from).toList()
+            );
+        }
+
+        int pageNumber = page == null ? 0 : page;
+        int pageSize = size == null ? 20 : size;
+
+        if (pageNumber < 0 || pageSize < 1 || pageSize > 100
+                || (long) pageNumber * pageSize > Integer.MAX_VALUE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pagination invalide");
+        }
+
+        var results = service.searchPublished(venue, keyword, pageNumber, pageSize);
+
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(results.getTotalElements()))
+                .body(results.map(EventResponse::from).getContent());
     }
 
     @PutMapping("/{id}")

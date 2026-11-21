@@ -206,6 +206,32 @@ class EventControllerTest {
                 .andExpect(status().isOk());
     }
     @Test
+    void catalogSearchMatchesPublishedTitlesAndPaginates() throws Exception {
+        String keyword = uniqueTitle("catalogue");
+        String title = "Concert " + keyword;
+        String id = createEvent(title, 100);
+        createEvent("Brouillon " + keyword, 100);
+
+        mockMvc.perform(post("/api/events/{id}/publish", id)
+                        .header("Authorization", "Bearer organizer-test-token"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/events")
+                        .param("keyword", keyword)
+                        .param("page", "0")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Total-Count", "1"))
+                .andExpect(jsonPath("$[0].title").value(title));
+
+        mockMvc.perform(get("/api/events")
+                        .param("keyword", keyword)
+                        .param("page", "1")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+    @Test
     void unknownEventReturns404() throws Exception {
         mockMvc.perform(get("/api/events/{id}", 999999))
                 .andExpect(status().isNotFound());

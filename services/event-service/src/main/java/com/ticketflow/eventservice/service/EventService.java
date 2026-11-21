@@ -9,6 +9,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @Service
 @Transactional
@@ -62,7 +65,15 @@ public class EventService {
         }
         return repo.findByStatusAndVenueIgnoreCaseOrderByStartsAtAsc(EventStatus.PUBLISHED, venue.trim());
     }
+    @Transactional(readOnly = true)
+    public Page<Event> searchPublished(String venue, String keyword, int page, int size) {
+        String venueFilter = venue == null ? "" : venue.trim();
+        String keywordFilter = keyword == null ? "" : keyword.trim();
 
+        var pageable = PageRequest.of(page, size, Sort.by("startsAt", "id"));
+
+        return repo.searchCatalog(EventStatus.PUBLISHED, venueFilter, keywordFilter, pageable);
+    }
     private Event getManageableEvent(Long id, String issuer, String subject, boolean admin) {
         Event event = get(id);
 
