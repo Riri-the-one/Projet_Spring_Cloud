@@ -124,6 +124,33 @@ if (process.argv.includes('--ticket-only')) {
   console.log('Ticket demo verified with real JWTs; no synthetic confirmation or ticket was created.');
   process.exit(0);
 }
+if (process.argv.includes('--ticket-gateway')) {
+  const ticket = process.env.TICKETFLOW_TICKET_URL ?? 'http://localhost:8084';
+  const url = new URL(ticket);
+  assert.equal(url.protocol, 'http:');
+  assert.ok(['localhost', '127.0.0.1'].includes(url.hostname));
+  const until = Date.now() + 180000;
+  while (true) {
+    const response = await fetchTimed(`${gateway}/api/tickets/me`, { headers: { Authorization: `Bearer ${customer}` } });
+    if (response.status === 200) { assert.deepEqual(await response.json(), []); break; }
+    assert.equal(response.status, 503, 'Ticket routing readiness must not hide authentication/profile failures');
+    assert.ok(Date.now() < until, 'Ticket discovery did not converge');
+    await delay(3000);
+  }
+  const missing = '578b6035-0a61-44e0-ad88-f492362e5fbc';
+  for (const base of [ticket, gateway]) {
+    await check('GET', '/api/tickets/me', 401, undefined, undefined, {}, base);
+    await check('GET', '/api/tickets/me', 403, organizer, undefined, {}, base);
+    await check('GET', '/api/tickets/me', 200, customer, undefined, { 'X-Customer-Id': '999999' }, base);
+    await check('GET', `/api/tickets/${missing}`, 404, customer, undefined, {}, base);
+    await check('GET', '/api/tickets/bookings/9223372036854775807', 404, customer, undefined, {}, base);
+    await check('POST', `/api/tickets/${missing}/validity`, 404, customer, { controlCode: 'A'.repeat(43) }, {}, base);
+    await check('POST', '/api/tickets', 403, admin, { bookingId: 1 }, {}, base);
+    await check('POST', '/internal/tickets/issue', 403, admin, {}, {}, base);
+  }
+  console.log('Ticket direct + Gateway verified with real JWTs; runtime contains no synthetic tickets.');
+  process.exit(0);
+}
 if (process.argv.includes('--customer-postgresql')) {
   const { verifyCustomerPostgresql } = await import('./customer-postgresql-scenario.mjs');
   await verifyCustomerPostgresql({ customer, organizer, admin, customerService, fetchTimed });

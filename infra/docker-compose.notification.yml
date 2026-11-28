@@ -1,0 +1,52 @@
+services:
+  postgres:
+    secrets:
+      - postgres_notification_password
+  notification-service:
+    profiles: [notification]
+    build:
+      context: ..
+      dockerfile: services/notification-service/Dockerfile
+    ports:
+      - "127.0.0.1:${TICKETFLOW_NOTIFICATION_PORT:-8085}:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgresql
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888,configtree:/run/secrets/notification/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ticketflow_notification
+      SPRING_DATASOURCE_USERNAME: ticketflow_notification
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_FLYWAY_CLEAN_DISABLED: "true"
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "false"
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      EUREKA_INSTANCE_INSTANCE_ID: notification-service:8085
+      EUREKA_CLIENT_REFRESH_ENABLE: "false"
+      CUSTOMER_SERVICE_URL: http://customer-service:8081
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/ticketflow
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/ticketflow/protocol/openid-connect/certs
+      TICKETFLOW_NOTIFICATION_INGRESS: "off"
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx256m
+      SERVER_PORT: "8085"
+    secrets:
+      - source: postgres_notification_password
+        target: /run/secrets/notification/spring.datasource.password
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL","curl --fail --silent --max-time 4 http://localhost:8085/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+secrets:
+  postgres_notification_password:
+    file: ${TICKETFLOW_POSTGRES_SECRETS_DIR:-./postgresql/.local}/notification.password

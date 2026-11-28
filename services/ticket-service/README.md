@@ -1,4 +1,4 @@
-# Ticket Service — premier lot métier
+# Ticket Service
 
 Module Java 21 / Spring MVC, Spring Boot 4.0.8 et Spring Cloud 2025.1.2 du monorepo.
 Le code métier Booking, Payment et Event n'est pas modifié.
@@ -81,9 +81,10 @@ insuffisants et routes non autorisées ; 404 billet/lot/profil introuvable ; 503
 Customer impossible. Les erreurs sont sans données personnelles. Les conflits d'émission
 restent internes : aucun endpoint HTTP ne traduit actuellement cette exception en 409.
 
-Les trois routes Gateway existantes restent inchangées : Ticket n'est **pas encore
-exposé par Gateway**. Le test local utilise le port loopback 8084. L'ajout futur d'une
-route Gateway et de sa matrice sera une étape explicite avant le branchement Angular.
+Les trois routes Gateway existantes restent inchangées. Ticket dispose maintenant de
+deux routes bornées par méthode HTTP pour les quatre API ci-dessus ; aucune route
+d'émission n'est ajoutée. Les validations JWT et de propriété restent dans Ticket.
+Le port direct loopback 8084 permet de vérifier cette protection indépendamment.
 
 ## Démarrage PowerShell
 
@@ -114,33 +115,21 @@ Il n'injecte aucun événement fictif en production. L'émission, les replays, l
 la propriété et les états de validité sont exercés par les tests automatisés avec H2
 et de vraies signatures RSA ; aucun Keycloak n'est nécessaire aux tests Maven.
 
-## Persistance provisoire et PostgreSQL futur
+## Persistance PostgreSQL et démonstration H2
 
-Validations locales du 15 novembre 2026 : Maven `verify` vert avec **183 tests**, dont
-**27 Ticket** ; image Ticket construite et conteneur sain. Le test `--ticket-only`
-avec de vrais JWT Keycloak a réussi sans créer de billet. Les dix conteneurs sont
-sains, et les définitions des sept services d'origine sont identiques avec l'overlay.
-La PR Customer PostgreSQL #7 est fusionnée à `4c08ab8` ; les quatre jobs de sa
-[CI main](https://github.com/Riri-the-one/Projet_Spring_Cloud/actions/runs/43774204921)
-sont verts.
+Le [guide PostgreSQL + Gateway](../../docs/ARIJ_TICKET_PERSISTENCE_GATEWAY.md) fournit
+les commandes de provisionnement, tests et démarrage. La base `ticketflow_ticket` et
+son compte/secret sont distincts de Customer/Event/Booking. La procédure additive est
+explicite sur volume neuf ou existant ; le bootstrap initial n'est pas rejoué.
 
-**H2 en mémoire uniquement, profil demo-h2 obligatoire.** La garde refuse les autres
-datasources et l'absence de profil, pour éviter une connexion à une base d'un autre
-domaine. Les billets et garanties d'idempotence disparaissent avec la base H2 au
-redémarrage : ce n'est pas un stockage durable ni une livraison exploitable en production.
-
-Le cluster PostgreSQL existant n'a que Customer/Event/Booking. Prévoir une base et un
-compte `ticketflow_ticket` distincts. Ne pas modifier le bootstrap initial en espérant
-qu'il s'applique à un volume déjà initialisé. Une procédure additive revue devra créer
-le compte avec secret local séparé, retirer les droits PUBLIC par défaut et accorder
-uniquement l'accès à cette base. Vérifier aussi l'absence de droits depuis les autres
-comptes de domaine. Aucune commande de provisionnement n'est exécutée dans ce lot.
-
-Ensuite : migrations Flyway Ticket séparées pour lots et billets, contraintes et index,
-types UUID/bigint/timestamptz, DDL validate, secret Ticket exclusif et tests PostgreSQL
-de concurrence, rollback, sauvegarde/restauration et persistance après redémarrage.
-Ne réutiliser aucune base ou migration Customer/Event/Booking.
+Le profil `postgresql` active Flyway V1/V2 pour lots et billets et Hibernate validate.
+Les codes, IDs et garanties d'idempotence sont conservés dans le volume PostgreSQL.
+La garde interdit les profils ambigus, une base étrangère et les DDL destructifs.
+Le profil `demo-h2` reste disponible sans secret PostgreSQL Ticket : sa base est
+éphémère et perd ses billets/idempotence au redémarrage. Aucun import H2 n'est automatique.
+Les sauvegardes/restaurations et la protection des codes au repos restent à préparer
+avant un usage en production.
 
 L'intégration complète attend le contrat confirmé de Salma, l'identité Booking fiable,
-le paiement admissible, les annulations, le provisionnement PostgreSQL Ticket et les
+le paiement admissible, les annulations et les
 politiques Kafka. Notification Service n'est pas commencé.

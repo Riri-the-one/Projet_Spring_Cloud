@@ -1,5 +1,7 @@
 # TicketFlow
 
+Contribution Arij et démonstration Windows : [guide de livraison final](docs/ARIJ_FINAL_DELIVERY.md).
+
 **A hands-on reference project for learning Spring Cloud and microservices, built around a real-world ticket booking platform.**
 
 TicketFlow is an open-source educational project that takes you from
@@ -112,8 +114,9 @@ nécessite l'URL réelle `CONFIG_GIT_URI` et l'overlay `infra/docker-compose.git
 ## Ticket Service — premier lot
 
 Le [module Ticket](services/ticket-service/README.md) fournit le cœur d'émission
-idempotente et une consultation JWT protégée. Son stockage est provisoirement H2,
-avec profil explicite ; aucune émission réseau n'est activée. Le
+idempotente et une consultation JWT protégée via Gateway. Son
+[stockage PostgreSQL dédié](docs/ARIJ_TICKET_PERSISTENCE_GATEWAY.md) est activable
+explicitement ; H2 reste disponible et aucune émission réseau n'est activée. Le
 [contrat BookingConfirmed proposé](docs/ARIJ_TICKET_BOOKING_CONTRACT.md) attend Salma.
 
 ## Customer PostgreSQL optionnel
@@ -140,6 +143,12 @@ microservices, and anyone preparing for backend or architecture interviews.
 Contributions, issues and exercises are welcome. A `CONTRIBUTING.md` will be
 added soon.
 -->
+
+## Notification Service indépendant
+
+Le [guide Notification](docs/ARIJ_NOTIFICATION_SERVICE.md) décrit PostgreSQL isolé,
+inbox Kafka technique, déduplication, canal simulé et reprises durables. Aucun
+consommateur Booking/Payment n'est branché sans contrat validé.
 
 ## License
 
