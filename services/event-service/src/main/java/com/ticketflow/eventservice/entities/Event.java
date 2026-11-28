@@ -44,6 +44,10 @@ public class Event {
     private int capacity;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "categorie", length = 30)
+    private CategorieEvenement categorie;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EventStatus status = EventStatus.DRAFT;
 
@@ -98,5 +102,14 @@ public class Event {
             throw new InvalidEventStateException("Only a PUBLISHED event can be closed, but it is " + status);
         }
         status = EventStatus.CLOSED;
+    }
+    public void changerCategorie(CategorieEvenement categorie) {
+        if (status == EventStatus.CLOSED) {
+            throw new InvalidEventStateException(
+                    "Impossible de modifier la catégorie d'un événement clôturé"
+            );
+        }
+
+        this.categorie = categorie;
     }
 }

@@ -1,4 +1,5 @@
 package com.ticketflow.eventservice.service;
+import com.ticketflow.eventservice.entities.CategorieEvenement;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -78,4 +79,34 @@ class EventServiceTest {
         assertThat(service.listPublished("  Rabat ")).isEmpty();
         verify(repo).findByStatusAndVenueIgnoreCaseOrderByStartsAtAsc(EventStatus.PUBLISHED, "Rabat");
     }
+
+    @Test
+    void createSavesEventWithCategory() {
+
+        // 1. Préparer une demande de création
+        EventRequest requestAvecCategorie = new EventRequest(
+                "Festival de Casablanca",
+                "Festival de musique",
+                "Casablanca",
+                Instant.now().plus(30, ChronoUnit.DAYS),
+                new BigDecimal("200.00"),
+                500,
+                CategorieEvenement.FESTIVAL
+        );
+
+        // 2. Simuler l'enregistrement dans la base de données
+        when(repo.save(any(Event.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        // 3. Appeler la méthode create()
+        Event saved = service.create(requestAvecCategorie);
+
+        // 4. Vérifier que la catégorie a bien été attribuée
+        assertThat(saved.getCategorie())
+                .isEqualTo(CategorieEvenement.FESTIVAL);
+
+        // 5. Vérifier que le repository a été appelé
+        verify(repo).save(any(Event.class));
+    }
+
 }
