@@ -60,3 +60,19 @@ jobs:
         run: |
           ./tools/Test-KafkaInfra.ps1
           ./tools/Test-KafkaInfra.ps1 -Recreate
+
+  ticket-postgresql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      - name: Provision Ticket on fresh cluster, repeat safely, test isolation and persistence
+        shell: pwsh
+        run: |
+          ./tools/Provision-TicketPostgresql.ps1
+          ./tools/Provision-TicketPostgresql.ps1
+          ./tools/Test-TicketPostgresql.ps1

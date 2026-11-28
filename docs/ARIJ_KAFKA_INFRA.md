@@ -1,8 +1,9 @@
 # Kafka : infrastructure locale TicketFlow
 
-Cette étape fournit uniquement le broker et ses vérifications. Aucun producteur métier,
-Notification Service ou Ticket Service n'est implémenté. Customer, Event et Booking
-conservent leurs configurations H2 et fonctionnent sans Kafka.
+Ce guide décrit la phase d'infrastructure Kafka et ses vérifications, sans producteur
+métier. Depuis cette phase, Customer/Ticket/Notification ont progressé ; voir la
+[livraison finale Arij](ARIJ_FINAL_DELIVERY.md). Event et Booking restent en H2 et
+fonctionnent sans Kafka ; les consommateurs métier attendent les contrats validés.
 
 ## Version et architecture
 

@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:notifications
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop

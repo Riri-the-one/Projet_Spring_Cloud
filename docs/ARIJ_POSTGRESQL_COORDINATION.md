@@ -34,7 +34,9 @@ dans une application. Aucun compte de domaine ne peut se connecter aux autres ba
 
 Arij coordonne l'infrastructure et migrera Customer séparément, notamment ses IDs Long, l'unicité
 de `(iss, sub)`, les profils historiques et la suppression/archivage avec références Booking.
-Ticket, Payment et Notification recevront leurs propres bases/comptes lorsque leur besoin sera défini.
+Ticket et Notification disposent désormais de leurs propres bases/comptes provisionnés
+explicitement ; voir [livraison finale Arij](ARIJ_FINAL_DELIVERY.md). Le futur Payment
+nécessitera une décision et un compte distincts, sans réutiliser une autre base métier.
 Cette étape ne commence aucun de ces services ni Kafka.
 
 Commandes et précautions : [guide PostgreSQL](ARIJ_POSTGRESQL_INFRA.md).
